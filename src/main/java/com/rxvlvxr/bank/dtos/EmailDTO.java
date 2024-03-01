@@ -1,0 +1,16 @@
+package com.rxvlvxr.bank.dtos;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@NoArgsConstructor
+@Getter
+@Setter
+public class EmailDTO {
+    @NotBlank(message = "поле не может быть пустым")
+    @jakarta.validation.constraints.Email(message = "пожалуйста, введите корректный адрес электронной почты")
+    private String address;
+}

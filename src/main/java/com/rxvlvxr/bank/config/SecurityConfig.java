@@ -1,0 +1,49 @@
+package com.rxvlvxr.bank.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+    private final JWTFilter jwtFilter;
+    private static final String[] PUBLIC_PATHS = {"/v3/api-docs.yaml",
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html"};
+
+    @Autowired
+    public SecurityConfig(JWTFilter jwtFilter) {
+        this.jwtFilter = jwtFilter;
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests((authz) -> authz
+                        .requestMatchers("/users/registration").permitAll()
+                        .requestMatchers(PUBLIC_PATHS).permitAll()
+                        .anyRequest().authenticated())
+                .sessionManagement(sessionManagementConfigurer -> sessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        return http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class).build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+}
