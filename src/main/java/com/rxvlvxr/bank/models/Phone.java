@@ -31,4 +31,10 @@ public class Phone {
     public Phone(String number) {
         this.number = number;
     }
+
+    public Phone(String number, LocalDateTime createdAt, User user) {
+        this.number = number;
+        this.createdAt = createdAt;
+        this.user = user;
+    }
 }

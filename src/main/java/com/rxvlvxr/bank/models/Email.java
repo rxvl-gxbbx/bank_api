@@ -31,4 +31,10 @@ public class Email {
     public Email(String address) {
         this.address = address;
     }
+
+    public Email(String address, LocalDateTime createdAt, User user) {
+        this.address = address;
+        this.createdAt = createdAt;
+        this.user = user;
+    }
 }

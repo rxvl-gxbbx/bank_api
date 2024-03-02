@@ -30,4 +30,10 @@ public class Account {
     @Column(name = "init_deposit")
     private double initDeposit;
 
+    public Account(double amount, LocalDateTime createdAt, User user, double initDeposit) {
+        this.amount = amount;
+        this.createdAt = createdAt;
+        this.user = user;
+        this.initDeposit = initDeposit;
+    }
 }

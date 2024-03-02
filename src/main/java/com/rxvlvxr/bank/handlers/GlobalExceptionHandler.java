@@ -6,7 +6,6 @@ import com.rxvlvxr.bank.utils.NotAllowedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -29,12 +28,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(ForbiddenException e) {
         log.error("Ошибка из-за ограничений доступа: {}", e.getMessage());
-        return new ResponseEntity<>(new ErrorResponse(e.getMessage(), LocalDateTime.now(ZoneId.systemDefault())), HttpStatus.FORBIDDEN);
-    }
-
-    @ExceptionHandler()
-    public ResponseEntity<ErrorResponse> handleException(AccessDeniedException e) {
-        log.error("Ошибка: {}", e.getMessage());
         return new ResponseEntity<>(new ErrorResponse(e.getMessage(), LocalDateTime.now(ZoneId.systemDefault())), HttpStatus.FORBIDDEN);
     }
 

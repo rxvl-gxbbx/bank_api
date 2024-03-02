@@ -1,5 +1,6 @@
 package com.rxvlvxr.bank.services;
 
+import com.rxvlvxr.bank.daos.AccountDAO;
 import com.rxvlvxr.bank.models.Account;
 import com.rxvlvxr.bank.repositories.AccountRepository;
 import com.rxvlvxr.bank.utils.NotEnoughFundsException;
@@ -8,17 +9,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
 public class AccountService {
-    private final static Object MONITOR = new Object();
     private final AccountRepository accountRepository;
-
+    private final AccountDAO accountDAO;
     @Autowired
-    public AccountService(AccountRepository accountRepository) {
+    public AccountService(AccountRepository accountRepository, AccountDAO accountDAO) {
         this.accountRepository = accountRepository;
+        this.accountDAO = accountDAO;
     }
 
     @Transactional
@@ -38,23 +38,18 @@ public class AccountService {
     }
 
     @Transactional
-    public void transfer(long fromId, long toId, double amount) {
-        MONITOR.notify();
+    public synchronized void transfer(long fromId, long toId, double amount) {
+        List<Account> accounts = accountDAO.selectForUpdate(fromId, toId);
 
-        Optional<Account> optionalFrom = accountRepository.findById(fromId);
-        Optional<Account> optionalTo = accountRepository.findById(toId);
+        Account accountFrom = accounts.get(0);
+        Account accountTo = accounts.get(1);
 
-        if (optionalFrom.isPresent() && optionalTo.isPresent()) {
-            Account accountFrom = optionalFrom.get();
-            Account accountTo = optionalTo.get();
+        if (amount > accountFrom.getAmount())
+            throw new NotEnoughFundsException();
 
-            if (amount > accountFrom.getAmount())
-                throw new NotEnoughFundsException();
+        accountFrom.setAmount(accountFrom.getAmount() - amount);
+        accountTo.setAmount(accountTo.getAmount() + amount);
 
-            accountFrom.setAmount(accountFrom.getAmount() - amount);
-            accountTo.setAmount(accountTo.getAmount() + amount);
-
-            accountRepository.saveAll(List.of(accountFrom, accountTo));
-        }
+        accountRepository.saveAll(List.of(accountFrom, accountTo));
     }
 }

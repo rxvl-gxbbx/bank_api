@@ -35,4 +35,11 @@ public class User {
     private List<Phone> phones;
     @OneToMany(mappedBy = "user", cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
     private List<Email> emails;
+
+    public User(String fullName, LocalDate birthDate, String username, String password) {
+        this.fullName = fullName;
+        this.birthDate = birthDate;
+        this.username = username;
+        this.password = password;
+    }
 }
