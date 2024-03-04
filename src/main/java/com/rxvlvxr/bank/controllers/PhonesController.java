@@ -3,6 +3,7 @@ package com.rxvlvxr.bank.controllers;
 import com.rxvlvxr.bank.dtos.ErrorDTO;
 import com.rxvlvxr.bank.dtos.ErrorResponse;
 import com.rxvlvxr.bank.dtos.PhoneDTO;
+import com.rxvlvxr.bank.dtos.Response;
 import com.rxvlvxr.bank.exceptions.ForbiddenException;
 import com.rxvlvxr.bank.exceptions.PhoneNotCreatedException;
 import com.rxvlvxr.bank.exceptions.PhoneNotFoundException;
@@ -42,7 +43,7 @@ public class PhonesController {
     }
 
     @PostMapping
-    public ResponseEntity<String> add(@AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid PhoneDTO phoneDTO, BindingResult bindingResult) {
+    public ResponseEntity<Response> add(@AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid PhoneDTO phoneDTO, BindingResult bindingResult) {
         User user = userDetails.user();
         log.info("Метод add начал выполнение для пользователя={}", user.getUsername());
 
@@ -59,11 +60,11 @@ public class PhonesController {
         phoneService.add(phone);
 
         log.info("Номер телефона успешно добавлен для пользователя={}", user.getUsername());
-        return ResponseEntity.status(HttpStatus.CREATED).body("Номер телефона успешно добавлен");
+        return new ResponseEntity<>(new Response("Номер телефона успешно добавлен", LocalDateTime.now()), HttpStatus.CREATED);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<String> update(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid PhoneDTO phoneDTO, BindingResult bindingResult) {
+    public ResponseEntity<Response> update(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid PhoneDTO phoneDTO, BindingResult bindingResult) {
         User user = userDetails.user();
         log.info("Метод update начал выполнение для пользователя={}", user.getUsername());
 
@@ -83,11 +84,11 @@ public class PhonesController {
         phoneService.update(id, phone);
 
         log.info("Номер телефона успешно обновлен для пользователя={}", user.getUsername());
-        return ResponseEntity.status(HttpStatus.OK).body("Номер телефона успешно обновлен");
+        return new ResponseEntity<>(new Response("Номер телефона успешно обновлен", LocalDateTime.now()), HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> delete(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails) {
+    public ResponseEntity<Response> delete(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails) {
         User user = userDetails.user();
         log.info("Метод delete начал выполнение для пользователя={}", user.getUsername());
 
@@ -97,7 +98,7 @@ public class PhonesController {
         phoneService.delete(id);
 
         log.info("Номер телефона успешно удален для пользователя={}", user.getUsername());
-        return ResponseEntity.status(HttpStatus.OK).body("Номер телефона успешно удален");
+        return new ResponseEntity<>(new Response("Номер телефона успешно удален", LocalDateTime.now()), HttpStatus.OK);
     }
 
     private boolean isRestricted(long id, User user) {

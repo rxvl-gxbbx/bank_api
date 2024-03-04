@@ -2,6 +2,7 @@ package com.rxvlvxr.bank.controllers;
 
 import com.rxvlvxr.bank.dtos.ErrorDTO;
 import com.rxvlvxr.bank.dtos.ErrorResponse;
+import com.rxvlvxr.bank.dtos.Response;
 import com.rxvlvxr.bank.dtos.TransferDTO;
 import com.rxvlvxr.bank.exceptions.*;
 import com.rxvlvxr.bank.models.User;
@@ -32,8 +33,8 @@ public class AccountsController {
     }
 
     @PatchMapping("/{id}/transfer")
-    public ResponseEntity<String> transfer(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails,
-                                           @RequestBody @Valid TransferDTO request, BindingResult bindingResult) {
+    public ResponseEntity<Response> transfer(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails,
+                                             @RequestBody @Valid TransferDTO request, BindingResult bindingResult) {
         User user = userDetails.user();
         log.info("Метод transfer начал выполнение для пользователя={}", user.getUsername());
 
@@ -48,7 +49,7 @@ public class AccountsController {
         accountService.transfer(id, request.getAccountId(), request.getAmount());
 
         log.info("Перевод от пользователя={} на сумму={} выполнен успешно", user.getUsername(), request.getAmount());
-        return ResponseEntity.status(HttpStatus.OK).body("Перевод выполнен успешно");
+        return new ResponseEntity<>(new Response("Перевод выполнен успешно", LocalDateTime.now()), HttpStatus.OK);
     }
 
     @ExceptionHandler

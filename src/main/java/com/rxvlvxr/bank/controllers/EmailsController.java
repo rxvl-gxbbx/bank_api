@@ -3,6 +3,7 @@ package com.rxvlvxr.bank.controllers;
 import com.rxvlvxr.bank.dtos.EmailDTO;
 import com.rxvlvxr.bank.dtos.ErrorDTO;
 import com.rxvlvxr.bank.dtos.ErrorResponse;
+import com.rxvlvxr.bank.dtos.Response;
 import com.rxvlvxr.bank.exceptions.EmailNotCreatedException;
 import com.rxvlvxr.bank.exceptions.EmailNotFoundException;
 import com.rxvlvxr.bank.exceptions.EmailNotUpdatedException;
@@ -40,7 +41,7 @@ public class EmailsController {
     }
 
     @PostMapping
-    public ResponseEntity<String> add(@AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid EmailDTO emailDTO, BindingResult bindingResult) {
+    public ResponseEntity<Response> add(@AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid EmailDTO emailDTO, BindingResult bindingResult) {
         User user = userDetails.user();
         log.info("Метод add начал выполнение для пользователя: {}", user.getUsername());
 
@@ -57,11 +58,11 @@ public class EmailsController {
         emailService.add(email);
 
         log.info("Адрес почты успешно добавлен для пользователя: {}", user.getUsername());
-        return ResponseEntity.status(HttpStatus.CREATED).body("Почта успешно добавлена");
+        return new ResponseEntity<>(new Response("Почта успешно добавлена", LocalDateTime.now()), HttpStatus.CREATED);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<String> update(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid EmailDTO emailDTO, BindingResult bindingResult) {
+    public ResponseEntity<Response> update(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid EmailDTO emailDTO, BindingResult bindingResult) {
         User user = userDetails.user();
         log.info("Метод update начал выполнение для пользователя: {}", user.getUsername());
 
@@ -82,11 +83,11 @@ public class EmailsController {
         emailService.update(id, email);
 
         log.info("Почта успешно обновлена для пользователя: {}", user.getUsername());
-        return ResponseEntity.status(HttpStatus.OK).body("Почта успешно обновлена");
+        return new ResponseEntity<>(new Response("Почта успешно обновлена", LocalDateTime.now()), HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> delete(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails) {
+    public ResponseEntity<Response> delete(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails) {
         User user = userDetails.user();
         log.info("Метод delete начал выполнение для пользователя: {}", user.getUsername());
 
@@ -96,7 +97,7 @@ public class EmailsController {
         emailService.delete(id);
 
         log.info("Почта успешно удалена для пользователя: {}", user.getUsername());
-        return ResponseEntity.status(HttpStatus.OK).body("Почта успешно удалена");
+        return new ResponseEntity<>(new Response("Почта успешно удалена", LocalDateTime.now()), HttpStatus.OK);
     }
 
     private boolean isRestricted(long id, User user) {
