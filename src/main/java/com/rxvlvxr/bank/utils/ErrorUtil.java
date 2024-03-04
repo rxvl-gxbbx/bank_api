@@ -1,24 +1,21 @@
 package com.rxvlvxr.bank.utils;
 
+import com.rxvlvxr.bank.dtos.ErrorDTO;
+import com.rxvlvxr.bank.dtos.ErrorResponse;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class ErrorUtil {
-    /**
-     * метод для генерации сообщений об ошибке
-     *
-     * @param bindingResult передается объект типа BindingResult
-     * @return возвращается строка об ошибке
-     */
-    public static String getErrorMsg(BindingResult bindingResult) {
-        StringBuilder errorMessage = new StringBuilder();
+    public static ErrorResponse getResponse(BindingResult bindingResult) {
         List<FieldError> errors = bindingResult.getFieldErrors();
+        ErrorResponse response = new ErrorResponse();
 
         for (FieldError error : errors)
-            errorMessage.append(error.getField()).append(" - ").append(error.getDefaultMessage()).append(";");
+            response.getErrors().add(new ErrorDTO(error.getField() + " - " + error.getDefaultMessage(), LocalDateTime.now()));
 
-        return errorMessage.toString();
+        return response;
     }
 }

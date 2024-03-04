@@ -1,9 +1,9 @@
 package com.rxvlvxr.bank.services;
 
-import com.rxvlvxr.bank.daos.AccountDAO;
+import com.rxvlvxr.bank.exceptions.AccountNotFoundException;
+import com.rxvlvxr.bank.exceptions.NotEnoughFundsException;
 import com.rxvlvxr.bank.models.Account;
 import com.rxvlvxr.bank.repositories.AccountRepository;
-import com.rxvlvxr.bank.utils.NotEnoughFundsException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,11 +14,9 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class AccountService {
     private final AccountRepository accountRepository;
-    private final AccountDAO accountDAO;
     @Autowired
-    public AccountService(AccountRepository accountRepository, AccountDAO accountDAO) {
+    public AccountService(AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
-        this.accountDAO = accountDAO;
     }
 
     @Transactional
@@ -39,10 +37,11 @@ public class AccountService {
 
     @Transactional
     public synchronized void transfer(long fromId, long toId, double amount) {
-        List<Account> accounts = accountDAO.selectForUpdate(fromId, toId);
+        Account accountFrom = accountRepository.findById(fromId).orElse(null);
+        Account accountTo = accountRepository.findById(toId).orElse(null);
 
-        Account accountFrom = accounts.get(0);
-        Account accountTo = accounts.get(1);
+        if (accountTo == null || accountFrom == null)
+            throw new AccountNotFoundException();
 
         if (amount > accountFrom.getAmount())
             throw new NotEnoughFundsException();

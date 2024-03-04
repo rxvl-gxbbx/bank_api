@@ -1,4 +1,4 @@
-package com.rxvlvxr.bank.utils;
+package com.rxvlvxr.bank.exceptions;
 
 public class ForbiddenException extends RuntimeException {
     private final String message;

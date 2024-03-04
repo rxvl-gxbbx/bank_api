@@ -1,4 +1,4 @@
-package com.rxvlvxr.bank.utils;
+package com.rxvlvxr.bank.validators;
 
 import com.rxvlvxr.bank.models.Email;
 import com.rxvlvxr.bank.repositories.EmailRepository;

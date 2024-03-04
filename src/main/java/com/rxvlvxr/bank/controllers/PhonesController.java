@@ -1,12 +1,19 @@
 package com.rxvlvxr.bank.controllers;
 
+import com.rxvlvxr.bank.dtos.ErrorDTO;
+import com.rxvlvxr.bank.dtos.ErrorResponse;
 import com.rxvlvxr.bank.dtos.PhoneDTO;
+import com.rxvlvxr.bank.exceptions.ForbiddenException;
+import com.rxvlvxr.bank.exceptions.PhoneNotCreatedException;
+import com.rxvlvxr.bank.exceptions.PhoneNotFoundException;
+import com.rxvlvxr.bank.exceptions.PhoneNotUpdatedException;
 import com.rxvlvxr.bank.mappers.PhoneMapper;
 import com.rxvlvxr.bank.models.Phone;
 import com.rxvlvxr.bank.models.User;
 import com.rxvlvxr.bank.security.BankUserDetails;
 import com.rxvlvxr.bank.services.PhoneService;
-import com.rxvlvxr.bank.utils.*;
+import com.rxvlvxr.bank.utils.ErrorUtil;
+import com.rxvlvxr.bank.validators.PhoneValidation;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +24,10 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.util.Collections;
 
 @RestController
-@RequestMapping("/phones")
+@RequestMapping("/bank/phones")
 @Slf4j
 public class PhonesController {
     private final PhoneValidation phoneValidation;
@@ -36,30 +43,29 @@ public class PhonesController {
 
     @PostMapping
     public ResponseEntity<String> add(@AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid PhoneDTO phoneDTO, BindingResult bindingResult) {
-        log.info("Метод add начал выполнение для пользователя: {}", userDetails.getUser().getUsername());
+        User user = userDetails.user();
+        log.info("Метод add начал выполнение для пользователя={}", user.getUsername());
 
         Phone phone = phoneMapper.toPhone(phoneDTO);
 
         log.info("Валидация номера телефона");
         phoneValidation.validate(phone, bindingResult);
 
-        if (bindingResult.hasErrors()) throw new PhoneNotCreatedException(ErrorUtil.getErrorMsg(bindingResult));
+        if (bindingResult.hasErrors()) throw new PhoneNotCreatedException(ErrorUtil.getResponse(bindingResult));
 
-        User user = userDetails.getUser();
         phone.setUser(user);
 
-        log.info("Попытка добавить новый номер для пользователя: {}", user.getUsername());
+        log.info("Попытка добавить новый номер для пользователя={}", user.getUsername());
         phoneService.add(phone);
 
-        log.info("Телефон успешно добавлен для пользователя: {}", user.getUsername());
-        return ResponseEntity.status(HttpStatus.CREATED).body("Телефон успешно добавлен");
+        log.info("Номер телефона успешно добавлен для пользователя={}", user.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED).body("Номер телефона успешно добавлен");
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<String> update(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid PhoneDTO phoneDTO, BindingResult bindingResult) {
-        User user = userDetails.getUser();
-
-        log.info("Метод update начал выполнение для пользователя: {}", user.getUsername());
+        User user = userDetails.user();
+        log.info("Метод update начал выполнение для пользователя={}", user.getUsername());
 
         if (isRestricted(id, user)) throw new ForbiddenException();
 
@@ -69,30 +75,29 @@ public class PhonesController {
         phoneValidation.validate(phone, bindingResult);
 
         if (bindingResult.hasErrors())
-            throw new PhoneNotUpdatedException(ErrorUtil.getErrorMsg(bindingResult));
+            throw new PhoneNotUpdatedException(ErrorUtil.getResponse(bindingResult));
 
         phone.setUser(user);
 
-        log.info("Обновление телефона с идентификатором {} на номер {}", id, phone.getNumber());
+        log.info("Обновление телефона id={} с номера=\"{}\" на номер=\"{}\"", id, user.getPhones().get(0).getNumber(), phone.getNumber());
         phoneService.update(id, phone);
 
-        log.info("Телефон успешно обновлен для пользователя: {}", user.getUsername());
-        return ResponseEntity.status(HttpStatus.OK).body("Телефон успешно обновлен");
+        log.info("Номер телефона успешно обновлен для пользователя={}", user.getUsername());
+        return ResponseEntity.status(HttpStatus.OK).body("Номер телефона успешно обновлен");
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> delete(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails) {
-        User user = userDetails.getUser();
-
-        log.info("Метод delete начал выполнение для пользователя: {}", user.getUsername());
+        User user = userDetails.user();
+        log.info("Метод delete начал выполнение для пользователя={}", user.getUsername());
 
         if (isRestricted(id, user)) throw new ForbiddenException();
 
-        log.info("Удаляется телефон с идентификатором: {}", id);
+        log.info("Удаляется номер телефона id={}", id);
         phoneService.delete(id);
 
-        log.info("Телефон успешно удален для пользователя: {}", user.getUsername());
-        return ResponseEntity.status(HttpStatus.OK).body("Телефон успешно удален");
+        log.info("Номер телефона успешно удален для пользователя={}", user.getUsername());
+        return ResponseEntity.status(HttpStatus.OK).body("Номер телефона успешно удален");
     }
 
     private boolean isRestricted(long id, User user) {
@@ -101,20 +106,19 @@ public class PhonesController {
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(PhoneNotCreatedException e) {
-        log.error("Ошибка валидации: {}", e.getMessage());
-        return new ResponseEntity<>(new ErrorResponse(e.getMessage(), LocalDateTime.now(ZoneId.systemDefault())), HttpStatus.BAD_REQUEST);
+        log.error("Ошибка валидации!");
+        return new ResponseEntity<>(e.getResponse(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(PhoneNotUpdatedException e) {
-        log.error("Ошибка валидации: {}", e.getMessage());
-        return new ResponseEntity<>(new ErrorResponse(e.getMessage(), LocalDateTime.now(ZoneId.systemDefault())), HttpStatus.BAD_REQUEST);
+        log.error("Ошибка валидации!");
+        return new ResponseEntity<>(e.getResponse(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(PhoneNotFoundException e) {
-        log.error("Ошибка: {}", e.getMessage());
-        return new ResponseEntity<>(new ErrorResponse(e.getMessage(), LocalDateTime.now(ZoneId.systemDefault())), HttpStatus.BAD_REQUEST);
+        log.error("Ошибка! {}", e.getMessage());
+        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new ErrorDTO(e.getMessage(), LocalDateTime.now()))), HttpStatus.BAD_REQUEST);
     }
-
 }

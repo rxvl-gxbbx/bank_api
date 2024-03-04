@@ -1,11 +1,11 @@
 package com.rxvlvxr.bank.services;
 
+import com.rxvlvxr.bank.exceptions.NotAllowedException;
+import com.rxvlvxr.bank.exceptions.PhoneNotFoundException;
 import com.rxvlvxr.bank.models.Phone;
 import com.rxvlvxr.bank.models.User;
 import com.rxvlvxr.bank.repositories.PhoneRepository;
 import com.rxvlvxr.bank.repositories.UserRepository;
-import com.rxvlvxr.bank.utils.NotAllowedException;
-import com.rxvlvxr.bank.utils.PhoneNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

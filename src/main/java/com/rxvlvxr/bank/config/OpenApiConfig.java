@@ -17,5 +17,4 @@ import org.springframework.context.annotation.Configuration;
         @SecurityScheme(name = "bearerToken", type = SecuritySchemeType.HTTP, scheme = "bearer")
 })
 public class OpenApiConfig {
-
 }

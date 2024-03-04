@@ -1,12 +1,12 @@
-package com.rxvlvxr.bank.utils;
+package com.rxvlvxr.bank.exceptions;
 
 import lombok.Getter;
 
 @Getter
 public class EmailNotFoundException extends RuntimeException {
-    private final String msg;
+    private final String message;
 
     public EmailNotFoundException() {
-        this.msg = "Почта не найдена";
+        this.message = "Почта не найдена";
     }
 }

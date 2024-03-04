@@ -21,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("integration-test")
+@Transactional(readOnly = true)
 class BankApplicationTests {
 
     private final AccountRepository accountRepository;
@@ -67,11 +68,13 @@ class BankApplicationTests {
     }
 
     @AfterAll
+    @Transactional
     public void clear() {
         userRepository.deleteAll(users);
     }
 
     @Test
+    @Transactional
     void transferCorrectAmount() {
         Assertions.assertTrue(accounts.size() >= 2);
 
@@ -84,6 +87,7 @@ class BankApplicationTests {
     }
 
     @Test
+    @Transactional
     void transferFromOneToOther26TimesGetCorrectAmount() {
         Assertions.assertTrue(accounts.size() >= 2);
 
@@ -99,9 +103,8 @@ class BankApplicationTests {
     }
 
     @Test
+    @Transactional
     void transferFromOneToOtherAccountIn10ParallelThreadsFor50TimesEachAndGetCurrentAmount() throws InterruptedException {
-        double amount = 123.13;
-
         Assertions.assertTrue(accounts.size() >= 2);
 
         CountDownLatch countDownLatch = new CountDownLatch(10);

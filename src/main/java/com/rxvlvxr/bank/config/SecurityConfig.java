@@ -3,6 +3,8 @@ package com.rxvlvxr.bank.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -16,10 +18,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
     private final JWTFilter jwtFilter;
-    private static final String[] PUBLIC_PATHS = {"/v3/api-docs.yaml",
+    private static final String[] PUBLIC_PATHS = {
+            "/v3/api-docs.yaml",
             "/v3/api-docs/**",
             "/swagger-ui/**",
-            "/swagger-ui.html"};
+            "/swagger-ui.html"
+    };
 
     @Autowired
     public SecurityConfig(JWTFilter jwtFilter) {
@@ -31,7 +35,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests((authz) -> authz
-                        .requestMatchers("/users/registration").permitAll()
+                        .requestMatchers("/bank/users/registration", "/bank/users/login").permitAll()
                         .requestMatchers(PUBLIC_PATHS).permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(sessionManagementConfigurer -> sessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -44,4 +48,8 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
 }

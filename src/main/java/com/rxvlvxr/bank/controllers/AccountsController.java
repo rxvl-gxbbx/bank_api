@@ -1,10 +1,13 @@
 package com.rxvlvxr.bank.controllers;
 
+import com.rxvlvxr.bank.dtos.ErrorDTO;
+import com.rxvlvxr.bank.dtos.ErrorResponse;
 import com.rxvlvxr.bank.dtos.TransferDTO;
+import com.rxvlvxr.bank.exceptions.*;
 import com.rxvlvxr.bank.models.User;
 import com.rxvlvxr.bank.security.BankUserDetails;
 import com.rxvlvxr.bank.services.AccountService;
-import com.rxvlvxr.bank.utils.*;
+import com.rxvlvxr.bank.utils.ErrorUtil;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +18,10 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.util.Collections;
 
 @RestController
-@RequestMapping("/accounts")
+@RequestMapping("/bank/accounts")
 @Slf4j
 public class AccountsController {
     private final AccountService accountService;
@@ -31,38 +34,38 @@ public class AccountsController {
     @PatchMapping("/{id}/transfer")
     public ResponseEntity<String> transfer(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails,
                                            @RequestBody @Valid TransferDTO request, BindingResult bindingResult) {
-        User user = userDetails.getUser();
-
-        log.info("Метод transfer начал выполнение для пользователя: {}", user.getUsername());
+        User user = userDetails.user();
+        log.info("Метод transfer начал выполнение для пользователя={}", user.getUsername());
 
         if (user.getAccount().getId() != id)
             throw new ForbiddenException();
-
+        if (user.getAccount().getId() == request.getAccountId())
+            throw new NotAllowedException();
         if (bindingResult.hasErrors())
-            throw new TransferNotProcessedException(ErrorUtil.getErrorMsg(bindingResult));
+            throw new TransferNotProcessedException(ErrorUtil.getResponse(bindingResult));
 
-        log.info("Попытка перевода с аккаунта {} на аккаунт {}: {}", id, request.getAccountId(), request.getAmount());
+        log.info("Попытка перевода с аккаунта id={} на аккаунт id={}, сумма перевода={}", id, request.getAccountId(), request.getAmount());
         accountService.transfer(id, request.getAccountId(), request.getAmount());
 
-        log.info("Перевод на сумму {} выполнен успешно", request.getAmount());
+        log.info("Перевод от пользователя={} на сумму={} выполнен успешно", user.getUsername(), request.getAmount());
         return ResponseEntity.status(HttpStatus.OK).body("Перевод выполнен успешно");
     }
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(TransferNotProcessedException e) {
-        log.error("Ошибка валидации: {}", e.getMessage());
-        return new ResponseEntity<>(new ErrorResponse(e.getMessage(), LocalDateTime.now(ZoneId.systemDefault())), HttpStatus.BAD_REQUEST);
+        log.error("Ошибка валидации!");
+        return new ResponseEntity<>(e.getResponse(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(AccountNotFoundException e) {
-        log.error("Ошибка: {}", e.getMessage());
-        return new ResponseEntity<>(new ErrorResponse(e.getMessage(), LocalDateTime.now(ZoneId.systemDefault())), HttpStatus.BAD_REQUEST);
+        log.error("Ошибка! {}", e.getMessage());
+        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new ErrorDTO(e.getMessage(), LocalDateTime.now()))), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(NotEnoughFundsException e) {
-        log.error("Ошибка: {}", e.getMessage());
-        return new ResponseEntity<>(new ErrorResponse(e.getMessage(), LocalDateTime.now(ZoneId.systemDefault())), HttpStatus.BAD_REQUEST);
+        log.error("Ошибка! {}", e.getMessage());
+        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new ErrorDTO(e.getMessage(), LocalDateTime.now()))), HttpStatus.BAD_REQUEST);
     }
 }
