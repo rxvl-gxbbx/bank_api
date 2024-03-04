@@ -1,6 +1,5 @@
 package com.rxvlvxr.bank.controllers;
 
-import com.rxvlvxr.bank.dtos.ErrorDTO;
 import com.rxvlvxr.bank.dtos.ErrorResponse;
 import com.rxvlvxr.bank.dtos.PhoneDTO;
 import com.rxvlvxr.bank.dtos.Response;
@@ -120,6 +119,6 @@ public class PhonesController {
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(PhoneNotFoundException e) {
         log.error("Ошибка! {}", e.getMessage());
-        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new ErrorDTO(e.getMessage(), LocalDateTime.now()))), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new Response(e.getMessage(), LocalDateTime.now()))), HttpStatus.BAD_REQUEST);
     }
 }

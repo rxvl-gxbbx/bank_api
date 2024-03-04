@@ -1,7 +1,7 @@
 package com.rxvlvxr.bank.handlers;
 
-import com.rxvlvxr.bank.dtos.ErrorDTO;
 import com.rxvlvxr.bank.dtos.ErrorResponse;
+import com.rxvlvxr.bank.dtos.Response;
 import com.rxvlvxr.bank.exceptions.ForbiddenException;
 import com.rxvlvxr.bank.exceptions.NotAllowedException;
 import lombok.extern.slf4j.Slf4j;
@@ -23,18 +23,18 @@ public class GlobalExceptionHandler {
         String msg = "Неверная дата. Введите дату в корректном формате. Например: dd/MM/yyyy";
 
         log.error("Ошибка! {}", msg);
-        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new ErrorDTO(e.getMessage(), LocalDateTime.now()))), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new Response(e.getMessage(), LocalDateTime.now()))), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(ForbiddenException e) {
         log.error("Ошибка! {}", e.getMessage());
-        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new ErrorDTO(e.getMessage(), LocalDateTime.now()))), HttpStatus.FORBIDDEN);
+        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new Response(e.getMessage(), LocalDateTime.now()))), HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(NotAllowedException e) {
         log.error("Ошибка! {}", e.getMessage());
-        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new ErrorDTO(e.getMessage(), LocalDateTime.now()))), HttpStatus.METHOD_NOT_ALLOWED);
+        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new Response(e.getMessage(), LocalDateTime.now()))), HttpStatus.METHOD_NOT_ALLOWED);
     }
 }

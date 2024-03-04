@@ -1,7 +1,6 @@
 package com.rxvlvxr.bank.controllers;
 
 import com.rxvlvxr.bank.dtos.EmailDTO;
-import com.rxvlvxr.bank.dtos.ErrorDTO;
 import com.rxvlvxr.bank.dtos.ErrorResponse;
 import com.rxvlvxr.bank.dtos.Response;
 import com.rxvlvxr.bank.exceptions.EmailNotCreatedException;
@@ -119,6 +118,6 @@ public class EmailsController {
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(EmailNotFoundException e) {
         log.error("Ошибка: {}", e.getMessage());
-        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new ErrorDTO(e.getMessage(), LocalDateTime.now()))), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new Response(e.getMessage(), LocalDateTime.now()))), HttpStatus.BAD_REQUEST);
     }
 }

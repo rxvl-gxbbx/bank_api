@@ -14,7 +14,7 @@ import java.util.List;
 @Getter
 @Setter
 public class ErrorResponse {
-    List<ErrorDTO> errors;
+    List<Response> errors;
 
     {
         errors = new LinkedList<>();

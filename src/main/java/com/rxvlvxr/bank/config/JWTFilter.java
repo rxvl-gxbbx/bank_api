@@ -4,8 +4,8 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.rxvlvxr.bank.dtos.ErrorDTO;
 import com.rxvlvxr.bank.dtos.ErrorResponse;
+import com.rxvlvxr.bank.dtos.Response;
 import com.rxvlvxr.bank.services.BankUserDetailsService;
 import com.rxvlvxr.bank.utils.JWTUtil;
 import jakarta.servlet.FilterChain;
@@ -72,6 +72,6 @@ public class JWTFilter extends OncePerRequestFilter {
 
         response.setContentType("json/application");
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        response.getWriter().write(objectMapper.writeValueAsString(new ErrorResponse(Collections.singletonList(new ErrorDTO(error, LocalDateTime.now())))));
+        response.getWriter().write(objectMapper.writeValueAsString(new ErrorResponse(Collections.singletonList(new Response(error, LocalDateTime.now())))));
     }
 }

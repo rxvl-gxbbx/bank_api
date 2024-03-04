@@ -1,7 +1,7 @@
 package com.rxvlvxr.bank.utils;
 
-import com.rxvlvxr.bank.dtos.ErrorDTO;
 import com.rxvlvxr.bank.dtos.ErrorResponse;
+import com.rxvlvxr.bank.dtos.Response;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
@@ -14,7 +14,7 @@ public class ErrorUtil {
         ErrorResponse response = new ErrorResponse();
 
         for (FieldError error : errors)
-            response.getErrors().add(new ErrorDTO(error.getField() + " - " + error.getDefaultMessage(), LocalDateTime.now()));
+            response.getErrors().add(new Response(error.getField() + " - " + error.getDefaultMessage(), LocalDateTime.now()));
 
         return response;
     }
