@@ -79,7 +79,10 @@ public class PhonesController {
 
         phone.setUser(user);
 
-        log.info("Обновление телефона id={} с номера=\"{}\" на номер=\"{}\"", id, user.getPhones().get(0).getNumber(), phone.getNumber());
+        user.getPhones().stream()
+                .findFirst()
+                .ifPresentOrElse(telephone -> log.info("Обновление телефона id={} с номера=\"{}\" на номер=\"{}\"", id, telephone.getNumber(), phone.getNumber()),
+                        PhoneNotFoundException::new);
         phoneService.update(id, phone);
 
         log.info("Номер телефона успешно обновлен для пользователя={}", user.getUsername());
@@ -93,7 +96,10 @@ public class PhonesController {
 
         if (isRestricted(id, user)) throw new ForbiddenException();
 
-        log.info("Удаляется номер телефона id={}", id);
+        user.getPhones().stream()
+                .findFirst()
+                .ifPresentOrElse(phone -> log.info("Удаляется телефон id={} с номером {} для пользователя {}", id, phone.getNumber(), user.getUsername()),
+                        PhoneNotFoundException::new);
         phoneService.delete(id);
 
         log.info("Номер телефона успешно удален для пользователя={}", user.getUsername());
@@ -101,7 +107,8 @@ public class PhonesController {
     }
 
     private boolean isRestricted(long id, User user) {
-        return user.getPhones().stream().noneMatch(busyPhone -> busyPhone.getId() == id);
+        return user.getPhones().stream()
+                .noneMatch(busyPhone -> busyPhone.getId() == id);
     }
 
     @ExceptionHandler

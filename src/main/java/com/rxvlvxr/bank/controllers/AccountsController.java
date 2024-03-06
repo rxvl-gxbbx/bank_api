@@ -37,12 +37,11 @@ public class AccountsController {
         User user = userDetails.user();
         log.info("Метод transfer начал выполнение для пользователя={}", user.getUsername());
 
-        if (user.getAccount().getId() != id)
-            throw new ForbiddenException();
-        if (user.getAccount().getId() == request.getAccountId())
-            throw new NotAllowedException();
-        if (bindingResult.hasErrors())
-            throw new TransferNotProcessedException(ErrorUtil.getResponse(bindingResult));
+        long accountId = user.getAccount().getId();
+
+        if (accountId != id) throw new ForbiddenException();
+        if (accountId == request.getAccountId()) throw new NotAllowedException();
+        if (bindingResult.hasErrors()) throw new TransferNotProcessedException(ErrorUtil.getResponse(bindingResult));
 
         log.info("Попытка перевода с аккаунта id={} на аккаунт id={}, сумма перевода={}", id, request.getAccountId(), request.getAmount());
         accountService.transfer(id, request.getAccountId(), request.getAmount());

@@ -1,6 +1,7 @@
 package com.rxvlvxr.bank.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.rxvlvxr.bank.utils.ContactInfoWrapper;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Phone {
+public class Phone extends ContactInfoWrapper {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

@@ -6,8 +6,6 @@ import com.rxvlvxr.bank.exceptions.UserNotCreatedException;
 import com.rxvlvxr.bank.mappers.EmailMapper;
 import com.rxvlvxr.bank.mappers.PhoneMapper;
 import com.rxvlvxr.bank.mappers.UserMapper;
-import com.rxvlvxr.bank.models.Email;
-import com.rxvlvxr.bank.models.Phone;
 import com.rxvlvxr.bank.models.User;
 import com.rxvlvxr.bank.security.BankUserDetails;
 import com.rxvlvxr.bank.services.RegistrationService;
@@ -27,10 +25,13 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -65,15 +66,8 @@ public class UsersController {
     @PostMapping("/search")
     public UserResponse searchResults(@RequestBody SearchDTO request, @AuthenticationPrincipal BankUserDetails userDetails) {
         log.info("Метод searchResults начал выполнение для пользователя={}", userDetails.user().getUsername());
-
-        PhoneDTO phoneDTO = request.getPhone();
-        EmailDTO emailDTO = request.getEmail();
-
-        Phone phone = phoneDTO != null ? phoneMapper.toPhone(phoneDTO) : null;
-        Email email = emailDTO != null ? emailMapper.toEmail(emailDTO) : null;
-
         log.info("Выполняется поиск пользователей с одним из параметром: birthDate, phone.number, fullName, email.address");
-        UserResponse response = new UserResponse(userService.search(request.getBirthDate(), phone, request.getFullName(), email).stream()
+        UserResponse response = new UserResponse(userService.search(request.getBirthDate(), phoneMapper.toPhone(request.getPhone()), request.getFullName(), emailMapper.toEmail(request.getEmail())).stream()
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList()));
 
@@ -91,21 +85,12 @@ public class UsersController {
         log.info("Валидация логина пользователя");
         userValidation.validate(user, bindingResult);
 
-        List<Phone> phones = user.getPhones();
-        List<Email> emails = user.getEmails();
+        validateContactInfo(user.getPhones().stream()
+                .findFirst(), "телефона", phoneValidation, bindingResult);
+        validateContactInfo(user.getEmails().stream()
+                .findFirst(), "адреса почты", emailValidation, bindingResult);
 
-        if (phones != null && emails != null && !phones.isEmpty() && !emails.isEmpty()) {
-            Phone phone = phones.get(0);
-            Email email = emails.get(0);
-
-            log.info("Валидация номера телефона");
-            phoneValidation.validate(phone, bindingResult);
-            log.info("Валидация адреса почты");
-            emailValidation.validate(email, bindingResult);
-        }
-
-        if (bindingResult.hasErrors())
-            throw new UserNotCreatedException(ErrorUtil.getResponse(bindingResult));
+        if (bindingResult.hasErrors()) throw new UserNotCreatedException(ErrorUtil.getResponse(bindingResult));
 
         log.info("Регистрация пользователя={}", user.getUsername());
         registrationService.register(user);
@@ -118,18 +103,23 @@ public class UsersController {
         return Map.of("jwt-token", token);
     }
 
+    private <T> void validateContactInfo(Optional<T> contactInfo, String contactType, Validator validator, BindingResult bindingResult) {
+        contactInfo.ifPresentOrElse(info -> {
+            log.info("Валидация " + contactType);
+            validator.validate(info, bindingResult);
+        }, () -> {
+            throw new UserNotCreatedException(ErrorUtil.getResponse(bindingResult));
+        });
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> performLogin(@RequestBody @Valid AuthenticationDTO authenticationDTO, BindingResult bindingResult) {
+    public ResponseEntity<Map<String, String>> performLogin(@RequestBody @Valid AuthenticationDTO authenticationDTO, BindingResult bindingResult) throws BadCredentialsException {
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(authenticationDTO.getUsername(),
                 authenticationDTO.getPassword());
-        if (bindingResult.hasErrors())
-            throw new InvalidLoginRequestException(ErrorUtil.getResponse(bindingResult));
 
-        try {
-            authenticationManager.authenticate(authenticationToken);
-        } catch (BadCredentialsException e) {
-            return new ResponseEntity<>(Map.of("message", "Incorrect credentials"), HttpStatus.FORBIDDEN);
-        }
+        if (bindingResult.hasErrors()) throw new InvalidLoginRequestException(ErrorUtil.getResponse(bindingResult));
+
+        authenticationManager.authenticate(authenticationToken);
 
         String token = jwtUtil.generateToken(authenticationDTO.getUsername());
 
@@ -146,5 +136,11 @@ public class UsersController {
     public ResponseEntity<ErrorResponse> handleException(InvalidLoginRequestException e) {
         log.error("Ошибка валидации");
         return new ResponseEntity<>(e.getResponse(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleException(BadCredentialsException e) {
+        log.error("Ошибка! {}", e.getMessage());
+        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new Response(e.getMessage(), LocalDateTime.now()))), HttpStatus.BAD_REQUEST);
     }
 }

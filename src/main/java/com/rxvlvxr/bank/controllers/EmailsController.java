@@ -65,20 +65,21 @@ public class EmailsController {
         User user = userDetails.user();
         log.info("Метод update начал выполнение для пользователя: {}", user.getUsername());
 
-        if (isRestricted(id, user))
-            throw new ForbiddenException();
+        if (isRestricted(id, user)) throw new ForbiddenException();
 
         Email email = emailMapper.toEmail(emailDTO);
 
         log.info("Валидация почты");
         emailValidation.validate(email, bindingResult);
 
-        if (bindingResult.hasErrors())
-            throw new EmailNotUpdatedException(ErrorUtil.getResponse(bindingResult));
+        if (bindingResult.hasErrors()) throw new EmailNotUpdatedException(ErrorUtil.getResponse(bindingResult));
 
         email.setUser(user);
 
-        log.info("Обновление почты id={} c адреса \"{}\" на адрес \"{}\"", id, user.getEmails().get(0).getAddress(), email.getAddress());
+        user.getEmails().stream()
+                .findFirst()
+                .ifPresentOrElse(mail -> log.info("Обновление почты id={} c адреса \"{}\" на адрес \"{}\"", id, mail.getAddress(), email.getAddress()),
+                        EmailNotFoundException::new);
         emailService.update(id, email);
 
         log.info("Почта успешно обновлена для пользователя: {}", user.getUsername());
@@ -92,7 +93,10 @@ public class EmailsController {
 
         if (isRestricted(id, user)) throw new ForbiddenException();
 
-        log.info("Удаляется почта id={} с адресом \"{}\" для пользователя {}", id, user.getEmails().get(0).getAddress(), user.getUsername());
+        user.getEmails().stream()
+                .findFirst()
+                .ifPresentOrElse(email -> log.info("Удаляется почта id={} с адресом \"{}\" для пользователя {}", id, email.getAddress(), user.getUsername()),
+                        EmailNotFoundException::new);
         emailService.delete(id);
 
         log.info("Почта успешно удалена для пользователя: {}", user.getUsername());

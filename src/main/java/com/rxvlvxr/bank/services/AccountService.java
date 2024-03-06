@@ -8,12 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @Transactional(readOnly = true)
 public class AccountService {
     private final AccountRepository accountRepository;
+
     @Autowired
     public AccountService(AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
@@ -21,34 +20,28 @@ public class AccountService {
 
     @Transactional
     public void increaseBalanceForAllAccounts() {
-        List<Account> accounts = accountRepository.findAll();
-
-        List<Account> accountList = accounts.stream().peek(account -> {
+        accountRepository.findAll().forEach(account -> {
             double newBalance = account.getAmount() * 1.05;
             double maxBalance = account.getInitDeposit() * 2.07;
 
             if (newBalance <= maxBalance)
                 account.setAmount(newBalance);
+        });
 
-        }).toList();
-
-        accountRepository.saveAll(accountList);
+        accountRepository.flush();
     }
 
     @Transactional
     public synchronized void transfer(long fromId, long toId, double amount) {
-        Account accountFrom = accountRepository.findById(fromId).orElse(null);
-        Account accountTo = accountRepository.findById(toId).orElse(null);
-
-        if (accountTo == null || accountFrom == null)
-            throw new AccountNotFoundException();
+        Account accountFrom = accountRepository.findById(fromId).orElseThrow(AccountNotFoundException::new);
+        Account accountTo = accountRepository.findById(toId).orElseThrow(AccountNotFoundException::new);
 
         if (amount > accountFrom.getAmount())
-            throw new NotEnoughFundsException();
+            throw new NotEnoughFundsException(accountFrom.getAmount());
 
         accountFrom.setAmount(accountFrom.getAmount() - amount);
         accountTo.setAmount(accountTo.getAmount() + amount);
 
-        accountRepository.saveAll(List.of(accountFrom, accountTo));
+        accountRepository.flush();
     }
 }

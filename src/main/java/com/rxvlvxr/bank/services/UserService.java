@@ -18,19 +18,15 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
     private final UserDAO userDAO;
-    private final AccountService accountService;
 
     @Autowired
-    public UserService(UserRepository userRepository, UserDAO userDAO, AccountService accountService) {
+    public UserService(UserRepository userRepository, UserDAO userDAO) {
         this.userRepository = userRepository;
         this.userDAO = userDAO;
-        this.accountService = accountService;
     }
 
     @Transactional
     public List<User> search(LocalDate date, Phone phone, String name, Email email) {
-        accountService.increaseBalanceForAllAccounts();
-
         List<User> users = new ArrayList<>();
 
         if (date != null)

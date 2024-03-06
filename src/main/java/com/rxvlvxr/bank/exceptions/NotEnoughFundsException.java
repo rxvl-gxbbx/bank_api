@@ -6,7 +6,7 @@ import lombok.Getter;
 public class NotEnoughFundsException extends RuntimeException {
     private final String message;
 
-    public NotEnoughFundsException() {
-        this.message = "Недостаточно средств на счете";
+    public NotEnoughFundsException(double amount) {
+        this.message = "Недостаточно средств на счете. Текущий баланс: " + amount;
     }
 }
