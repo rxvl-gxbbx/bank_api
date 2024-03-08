@@ -1,43 +1,26 @@
 package com.rxvlvxr.bank.services;
 
-import com.rxvlvxr.bank.daos.UserDAO;
-import com.rxvlvxr.bank.models.Email;
-import com.rxvlvxr.bank.models.Phone;
 import com.rxvlvxr.bank.models.User;
 import com.rxvlvxr.bank.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
 public class UserService {
     private final UserRepository userRepository;
-    private final UserDAO userDAO;
-
     @Autowired
-    public UserService(UserRepository userRepository, UserDAO userDAO) {
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.userDAO = userDAO;
     }
 
     @Transactional
-    public List<User> search(LocalDate date, Phone phone, String name, Email email) {
-        List<User> users = new ArrayList<>();
-
-        if (date != null)
-            users = userRepository.findAllByBirthDateAfter(date);
-        else if (phone != null)
-            users = userDAO.findAllByPhoneNumber(phone.getNumber());
-        else if (name != null)
-            users = userRepository.findAllByFullNameStartingWith(name);
-        else if (email != null)
-            users = userDAO.findAllByEmail(email.getAddress());
-
-        return users;
+    public List<User> search(Specification<User> specification, Pageable pageable) {
+        return userRepository.findAll(specification, pageable).getContent();
     }
 }

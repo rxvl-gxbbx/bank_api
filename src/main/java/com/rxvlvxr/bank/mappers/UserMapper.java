@@ -1,5 +1,6 @@
 package com.rxvlvxr.bank.mappers;
 
+import com.rxvlvxr.bank.dtos.SearchDTO;
 import com.rxvlvxr.bank.dtos.UserDTO;
 import com.rxvlvxr.bank.dtos.UserSearchDTO;
 import com.rxvlvxr.bank.models.Email;
@@ -25,6 +26,17 @@ public class UserMapper {
 
         user.setPhones(Collections.singletonList(new Phone(userDTO.getPhone().getNumber())));
         user.setEmails(Collections.singletonList(new Email(userDTO.getEmail().getAddress())));
+
+        return user;
+    }
+
+    public User toUser(SearchDTO searchDTO) {
+        User user = modelMapper.map(searchDTO, User.class);
+
+        if (searchDTO.getPhone() != null)
+            user.setPhones(Collections.singletonList(new Phone(searchDTO.getPhone().getNumber())));
+        if (searchDTO.getEmail() != null)
+            user.setEmails(Collections.singletonList(new Email(searchDTO.getEmail().getAddress())));
 
         return user;
     }

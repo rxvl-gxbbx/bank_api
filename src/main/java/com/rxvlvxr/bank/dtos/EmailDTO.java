@@ -12,4 +12,9 @@ public class EmailDTO {
     @NotBlank(message = "поле не может быть пустым")
     @jakarta.validation.constraints.Email(message = "пожалуйста, введите корректный адрес электронной почты")
     private String address;
+
+    @Override
+    public String toString() {
+        return address;
+    }
 }

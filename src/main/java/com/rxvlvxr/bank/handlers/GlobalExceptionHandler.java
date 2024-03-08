@@ -20,10 +20,10 @@ import java.util.Collections;
 public class GlobalExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(DateTimeParseException e) {
-        String msg = "Неверная дата. Введите дату в корректном формате. Например: dd/MM/yyyy";
+        String msg = "Неверная дата. Введите дату в корректном формате. Например: yyyy-MM-dd";
 
         log.error("Ошибка! {}", msg);
-        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new Response(e.getMessage(), LocalDateTime.now()))), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(new Response(msg, LocalDateTime.now()))), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler

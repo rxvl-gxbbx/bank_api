@@ -2,9 +2,8 @@ package com.rxvlvxr.bank.controllers;
 
 import com.rxvlvxr.bank.dtos.*;
 import com.rxvlvxr.bank.exceptions.InvalidLoginRequestException;
+import com.rxvlvxr.bank.exceptions.InvalidSearchRequestException;
 import com.rxvlvxr.bank.exceptions.UserNotCreatedException;
-import com.rxvlvxr.bank.mappers.EmailMapper;
-import com.rxvlvxr.bank.mappers.PhoneMapper;
 import com.rxvlvxr.bank.mappers.UserMapper;
 import com.rxvlvxr.bank.models.User;
 import com.rxvlvxr.bank.security.BankUserDetails;
@@ -12,12 +11,16 @@ import com.rxvlvxr.bank.services.RegistrationService;
 import com.rxvlvxr.bank.services.UserService;
 import com.rxvlvxr.bank.utils.ErrorUtil;
 import com.rxvlvxr.bank.utils.JWTUtil;
+import com.rxvlvxr.bank.utils.UserSpecification;
 import com.rxvlvxr.bank.validators.EmailValidation;
 import com.rxvlvxr.bank.validators.PhoneValidation;
 import com.rxvlvxr.bank.validators.UserValidation;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -44,36 +47,46 @@ public class UsersController {
     private final PhoneValidation phoneValidation;
     private final EmailValidation emailValidation;
     private final UserMapper userMapper;
-    private final PhoneMapper phoneMapper;
-    private final EmailMapper emailMapper;
     private final JWTUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
 
     @Autowired
-    public UsersController(RegistrationService registrationService, UserService userService, UserValidation userValidation, PhoneValidation phoneValidation, EmailValidation emailValidation, UserMapper userMapper, PhoneMapper phoneMapper, EmailMapper emailMapper, JWTUtil jwtUtil, AuthenticationManager authenticationManager) {
+    public UsersController(RegistrationService registrationService, UserService userService, UserValidation userValidation, PhoneValidation phoneValidation, EmailValidation emailValidation, UserMapper userMapper, JWTUtil jwtUtil, AuthenticationManager authenticationManager) {
         this.registrationService = registrationService;
         this.userService = userService;
         this.userValidation = userValidation;
         this.phoneValidation = phoneValidation;
         this.emailValidation = emailValidation;
         this.userMapper = userMapper;
-        this.phoneMapper = phoneMapper;
-        this.emailMapper = emailMapper;
         this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
     }
 
     @PostMapping("/search")
-    public UserResponse searchResults(@RequestBody SearchDTO request, @AuthenticationPrincipal BankUserDetails userDetails) {
+    public UserResponse searchResults(@RequestBody @Valid SearchDTO request, BindingResult bindingResult, @AuthenticationPrincipal BankUserDetails userDetails) {
+        if (bindingResult.hasErrors())
+            throw new InvalidSearchRequestException(ErrorUtil.getResponse(bindingResult));
+
         log.info("Метод searchResults начал выполнение для пользователя={}", userDetails.user().getUsername());
-        log.info("Выполняется поиск пользователей с одним из параметром: birthDate, phone.number, fullName, email.address");
-        UserResponse response = new UserResponse(userService.search(request.getBirthDate(), phoneMapper.toPhone(request.getPhone()), request.getFullName(), emailMapper.toEmail(request.getEmail())).stream()
+        User user = userMapper.toUser(request);
+        log.info("Выполняется поиск пользователей с параметрами: birthDate={}, phones.number={}, fullName={}, emails.address={}", request.getBirthDate(), request.getPhone(), request.getFullName(), request.getEmail());
+        UserResponse response = new UserResponse(userService.search(new UserSpecification(user), getPageable(request.getSort(), request.getPagination(), "fullName", 1, 10, Sort.Direction.ASC)).stream()
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList()));
 
         log.info("Поиск пользователей успешно завершен");
         log.info("Количество найденных пользователей: {}", response.getUsers().size());
         return response;
+    }
+
+    private Pageable getPageable(SortParams sortParams, PaginationParams paginationParams, String defaultField, int defaultPageNumber, int defaultPageSize, Sort.Direction defaultSortDirection) {
+        String sortField = sortParams != null && sortParams.getField() != null ? sortParams.getField() : defaultField;
+        Sort.Direction sortDirection = sortParams != null && sortParams.getDirection() != null ? Sort.Direction.fromString(sortParams.getDirection()) : defaultSortDirection;
+
+        int pageNumber = paginationParams != null && paginationParams.getPageNumber() != null ? paginationParams.getPageNumber() : defaultPageNumber;
+        int pageSize = paginationParams != null && paginationParams.getPageSize() != null ? paginationParams.getPageSize() : defaultPageSize;
+
+        return PageRequest.of(pageNumber - 1, pageSize, Sort.by(sortDirection, sortField));
     }
 
     @PostMapping("/registration")
@@ -134,6 +147,12 @@ public class UsersController {
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(InvalidLoginRequestException e) {
+        log.error("Ошибка валидации");
+        return new ResponseEntity<>(e.getResponse(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleException(InvalidSearchRequestException e) {
         log.error("Ошибка валидации");
         return new ResponseEntity<>(e.getResponse(), HttpStatus.BAD_REQUEST);
     }

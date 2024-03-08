@@ -60,29 +60,27 @@
    Swagger, Security)
 2) [controllers](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/controllers) -
    контроллеры для REST сервиса, данные классы нужны для обработки запросов
-3) [daos (Data Access Objects)](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/daos) -
-   классы для взаимодействия с БД (нестандартные запросы)
-4) [dtos (Data Transfer Objects)](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/dtos) -
+3) [dtos (Data Transfer Objects)](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/dtos) -
    классы-обертки для JSON request/response, нужны для передачи данных, т.е. все поля этих классов
    конвертируются в JSON формат для удобства передачи запросов, либо для того чтобы скрыть информацию, которая является
    необязательной для клиента (напримерю, ID из БД)
-5) [exceptions](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/exceptions) -
+4) [exceptions](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/exceptions) -
    классы-исключения
-6) [handlers](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/handlers) -
+5) [handlers](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/handlers) -
    классы-обработчики
-7) [mappers](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/mappers) - классы для
+6) [mappers](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/mappers) - классы для
    конвертации объектов
-8) [models](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/models) -
+7) [models](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/models) -
    классы-модели, описывают сущности таблиц
-9) [repositories](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/repositories) - классы
-   для взаимодействия с БД (стандартные запросы)
-10) [security](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/security) - классы, которые
-    требуются для Spring Security
-11) [services](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/services) -
+8) [repositories](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/repositories) - классы
+   для взаимодействия с БД
+9) [security](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/security) - классы, которые
+   требуются для Spring Security
+10) [services](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/services) -
     классы сервиса, отвечают за бизнес-логику приложения
-12) [utils](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/utils) - классы
+11) [utils](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/utils) - классы
     утилит
-13) [validators](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/validators) -
+12) [validators](https://github.com/rxvl-gxbbx/bank/tree/master/src/main/java/com/rxvlvxr/bank/validators) -
     классы для валидации запросов
 
 ## Описание методов из тестового задания
@@ -95,7 +93,6 @@
 ### Регистрация пользователей в БД
 
 ```java
-
 @PostMapping("/registration")
 public Map<String, String> registration(@RequestBody @Valid UserDTO userDTO, BindingResult bindingResult) {
    log.info("Метод registration начал выполнение");
@@ -105,21 +102,12 @@ public Map<String, String> registration(@RequestBody @Valid UserDTO userDTO, Bin
    log.info("Валидация логина пользователя");
    userValidation.validate(user, bindingResult);
 
-   List<Phone> phones = user.getPhones();
-   List<Email> emails = user.getEmails();
+   validateContactInfo(user.getPhones().stream()
+           .findFirst(), "телефона", phoneValidation, bindingResult);
+   validateContactInfo(user.getEmails().stream()
+           .findFirst(), "адреса почты", emailValidation, bindingResult);
 
-   if (phones != null && emails != null && !phones.isEmpty() && !emails.isEmpty()) {
-      Phone phone = phones.get(0);
-      Email email = emails.get(0);
-
-      log.info("Валидация номера телефона");
-      phoneValidation.validate(phone, bindingResult);
-      log.info("Валидация адреса почты");
-      emailValidation.validate(email, bindingResult);
-   }
-
-   if (bindingResult.hasErrors())
-      throw new UserNotCreatedException(ErrorUtil.getErrorMsg(bindingResult));
+   if (bindingResult.hasErrors()) throw new UserNotCreatedException(ErrorUtil.getResponse(bindingResult));
 
    log.info("Регистрация пользователя={}", user.getUsername());
    registrationService.register(user);
@@ -385,19 +373,15 @@ DELETE-запрос на URL: http://localhost:8080/bank/phones/{id}
 ### Метод поиска пользователей по БД
 
 ```java
-
 @PostMapping("/search")
-public UserResponse searchResults(@RequestBody SearchDTO request, @AuthenticationPrincipal BankUserDetails userDetails) {
+public UserResponse searchResults(@RequestBody @Valid SearchDTO request, BindingResult bindingResult, @AuthenticationPrincipal BankUserDetails userDetails) {
+   if (bindingResult.hasErrors())
+      throw new InvalidSearchRequestException(ErrorUtil.getResponse(bindingResult));
+
    log.info("Метод searchResults начал выполнение для пользователя={}", userDetails.user().getUsername());
-
-   PhoneDTO phoneDTO = request.getPhone();
-   EmailDTO emailDTO = request.getEmail();
-
-   Phone phone = phoneDTO != null ? phoneMapper.toPhone(phoneDTO) : null;
-   Email email = emailDTO != null ? emailMapper.toEmail(emailDTO) : null;
-
-   log.info("Выполняется поиск пользователей с одним из параметром: birthDate, phone.number, fullName, email.address");
-   UserResponse response = new UserResponse(userService.search(request.getBirthDate(), phone, request.getFullName(), email).stream()
+   User user = userMapper.toUser(request);
+   log.info("Выполняется поиск пользователей с параметрами: birthDate={}, phones.number={}, fullName={}, emails.address={}", request.getBirthDate(), request.getPhone(), request.getFullName(), request.getEmail());
+   UserResponse response = new UserResponse(userService.search(new UserSpecification(user), getPageable(request.getSort(), request.getPagination(), "fullName", 1, 10, Sort.Direction.ASC)).stream()
            .map(userMapper::toDTO)
            .collect(Collectors.toList()));
 
@@ -409,47 +393,34 @@ public UserResponse searchResults(@RequestBody SearchDTO request, @Authenticatio
 
 Метод POST-запроса, принимающий в виде запроса SearchDTO - класс, который имеет поля, сответствующие поисковому
 запросу (**birthDate**, **phone**, **fullName**, **email**) и **userDetails** - параметр для получения данных об
-аутентифицированном пользователе (достигается с помощью **@AuthenticationPrincipal** аннотации).
+аутентифицированном пользователе (достигается с помощью **@AuthenticationPrincipal** аннотации). Есть возможность
+сортировки/пагинации. Достигается с помощью private метода **getPageable**. Также есть возможность поиска сразу по
+нескольким параметрам.
 
 **Примечание**: я решил выбрать POST, а не GET, потому что передаю в теле запроса конфиденциальные данные.
 
-### Примеры запросов
+### Примеры запроса
 
 URL: http://localhost:8080/bank/users/search
 
-#### Запрос (поиск по дате)
-
 ```json
 {
-   "birthDate": "1999-03-04"
-}
-```
-
-#### Запрос (поиск по телефону)
-
-```json
-{
+   "birthDate": "1980-01-01",
    "phone": {
-      "number": "73483041415"
-   }
-}
-```
-
-#### Запрос (поиск по адресу почты)
-
-```json
-{
+      "number": "79259991212"
+   },
+   "fullName": "Фам",
    "email": {
-      "address": "mail@mail.com"
+      "address": "another@mail.ru"
+   },
+   "pagination": {
+      "pageNumber": 1,
+      "pageSize": 1
+   },
+   "sort": {
+      "field": "fullName",
+      "direction": "asc"
    }
-}
-```
-
-#### Запрос (поиск по имени)
-
-```json
-{
-   "fullName": "Фам"
 }
 ```
 
@@ -460,21 +431,27 @@ URL: http://localhost:8080/bank/users/search
    "users": [
       {
          "fullName": "Фамилия Имя Отчество",
-         "birthDate": "2000-01-01",
+         "birthDate": "1988-03-30",
          "account": {
-            "amount": 1979.9315994393985
+            "amount": 2474914.4992992477
          },
          "phones": [
             {
-               "number": "73483041415"
+               "number": "79259991212"
             },
             {
-               "number": "79990123456"
+               "number": "79309309090"
+            },
+            {
+               "number": "79261239999"
             }
          ],
          "emails": [
             {
-               "address": "mail@mail.com"
+               "address": "example@gmail.com"
+            },
+            {
+               "address": "another@mail.ru"
             }
          ]
       }
@@ -487,6 +464,39 @@ URL: http://localhost:8080/bank/users/search
 ```json
 {
    "users": []
+}
+```
+
+#### Ответ (при ошибке валидации)
+
+```json
+{
+   "errors": [
+      {
+         "message": "sort.field - должно соответствовать одному из перечисленных значений: fullName, birthDate, account.createdAt, phones.number, phones.createdAt, emails.address, emails.createdAt",
+         "time": "2024-03-08T09:22:46.4400124"
+      },
+      {
+         "message": "sort.direction - пожалуйста, введите корректное значение: asc (по возрастанию), desc (по убыванию)",
+         "time": "2024-03-08T09:22:46.4410126"
+      },
+      {
+         "message": "pagination.pageNumber - должно быть не меньше 1",
+         "time": "2024-03-08T09:22:46.4410126"
+      },
+      {
+         "message": "email.address - пожалуйста, введите корректный адрес электронной почты",
+         "time": "2024-03-08T09:22:46.4410126"
+      },
+      {
+         "message": "pagination.pageSize - должно быть не меньше 1",
+         "time": "2024-03-08T09:22:46.4410126"
+      },
+      {
+         "message": "phone.number - поле не может быть пустым",
+         "time": "2024-03-08T09:22:46.4410126"
+      }
+   ]
 }
 ```
 
@@ -510,7 +520,7 @@ public class BankApplication {
 ### Класс запланированных задач
 
 Данный класс использует сервис **AccountService** для выполнения бизнес-логики, а аннотация **@Scheduled** запускает
-метод 1 раз в минуту
+метод 1 раз в минуту.
 
 ```java
 
@@ -528,6 +538,21 @@ public class ScheduledTask {
    public void increaseBalance() {
       accountService.increaseBalanceForAllAccounts();
    }
+}
+```
+
+Является безопасным для транзакций благодаря аннотации над методом findAll() в AccountRepository
+
+```java
+
+@Repository
+public interface AccountRepository extends JpaRepository<Account, Long> {
+   // позволяет делать SELECT ... FOR UPDATE
+   @Lock(LockModeType.PESSIMISTIC_WRITE)
+   @NonNull
+   List<Account> findAll();
+
+   // code...
 }
 ```
 
@@ -598,10 +623,7 @@ public synchronized void transfer(long fromId, long toId, double amount) {
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
-   // позволяет делать SELECT ... FOR UPDATE
-   @Lock(LockModeType.PESSIMISTIC_WRITE)
-   @NonNull
-   List<Account> findAll();
+   // code ...
 
    // SELECT ... FOR UPDATE
    @Lock(LockModeType.PESSIMISTIC_WRITE)
