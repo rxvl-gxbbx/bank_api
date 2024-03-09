@@ -93,31 +93,32 @@
 ### Регистрация пользователей в БД
 
 ```java
+
 @PostMapping("/registration")
 public Map<String, String> registration(@RequestBody @Valid UserDTO userDTO, BindingResult bindingResult) {
-   log.info("Метод registration начал выполнение");
+    log.info("Метод registration начал выполнение");
 
-   User user = userMapper.toUser(userDTO);
+    User user = userMapper.toUser(userDTO);
 
-   log.info("Валидация логина пользователя");
-   userValidation.validate(user, bindingResult);
+    log.info("Валидация логина пользователя");
+    userValidation.validate(user, bindingResult);
 
-   validateContactInfo(user.getPhones().stream()
-           .findFirst(), "телефона", phoneValidation, bindingResult);
-   validateContactInfo(user.getEmails().stream()
-           .findFirst(), "адреса почты", emailValidation, bindingResult);
+    validateContactInfo(user.getPhones().stream()
+            .findFirst(), "телефона", phoneValidation, bindingResult);
+    validateContactInfo(user.getEmails().stream()
+            .findFirst(), "адреса почты", emailValidation, bindingResult);
 
-   if (bindingResult.hasErrors()) throw new UserNotCreatedException(ErrorUtil.getResponse(bindingResult));
+    if (bindingResult.hasErrors()) throw new UserNotCreatedException(ErrorUtil.getResponse(bindingResult));
 
-   log.info("Регистрация пользователя={}", user.getUsername());
-   registrationService.register(user);
-   log.info("Регистрация прошла успешно");
+    log.info("Регистрация пользователя={}", user.getUsername());
+    registrationService.register(user);
+    log.info("Регистрация прошла успешно");
 
-   log.info("Генерация токена");
-   String token = jwtUtil.generateToken(userDTO.getUsername());
+    log.info("Генерация токена");
+    String token = jwtUtil.generateToken(userDTO.getUsername());
 
-   log.info("Токен успешно сгенерирован");
-   return Map.of("jwt-token", token);
+    log.info("Токен успешно сгенерирован");
+    return Map.of("jwt-token", token);
 }
 ```
 
@@ -187,23 +188,23 @@ URL: http://localhost:8080/bank/users/registration
 
 @PostMapping
 public ResponseEntity<String> add(@AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid PhoneDTO phoneDTO, BindingResult bindingResult) {
-   User user = userDetails.user();
-   log.info("Метод add начал выполнение для пользователя={}", user.getUsername());
+    User user = userDetails.user();
+    log.info("Метод add начал выполнение для пользователя={}", user.getUsername());
 
-   Phone phone = phoneMapper.toPhone(phoneDTO);
+    Phone phone = phoneMapper.toPhone(phoneDTO);
 
-   log.info("Валидация номера телефона");
-   phoneValidation.validate(phone, bindingResult);
+    log.info("Валидация номера телефона");
+    phoneValidation.validate(phone, bindingResult);
 
-   if (bindingResult.hasErrors()) throw new PhoneNotCreatedException(ErrorUtil.getResponse(bindingResult));
+    if (bindingResult.hasErrors()) throw new PhoneNotCreatedException(ErrorUtil.getResponse(bindingResult));
 
-   phone.setUser(user);
+    phone.setUser(user);
 
-   log.info("Попытка добавить новый номер для пользователя={}", user.getUsername());
-   phoneService.add(phone);
+    log.info("Попытка добавить новый номер для пользователя={}", user.getUsername());
+    phoneService.add(phone);
 
-   log.info("Номер телефона успешно добавлен для пользователя={}", user.getUsername());
-   return ResponseEntity.status(HttpStatus.CREATED).body("Номер телефона успешно добавлен");
+    log.info("Номер телефона успешно добавлен для пользователя={}", user.getUsername());
+    return ResponseEntity.status(HttpStatus.CREATED).body("Номер телефона успешно добавлен");
 }
 ```
 
@@ -249,26 +250,26 @@ public ResponseEntity<String> add(@AuthenticationPrincipal BankUserDetails userD
 
 @PatchMapping("/{id}")
 public ResponseEntity<String> update(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid PhoneDTO phoneDTO, BindingResult bindingResult) {
-   User user = userDetails.user();
-   log.info("Метод update начал выполнение для пользователя={}", user.getUsername());
+    User user = userDetails.user();
+    log.info("Метод update начал выполнение для пользователя={}", user.getUsername());
 
-   if (isRestricted(id, user)) throw new ForbiddenException();
+    if (isRestricted(id, user)) throw new ForbiddenException();
 
-   Phone phone = phoneMapper.toPhone(phoneDTO);
+    Phone phone = phoneMapper.toPhone(phoneDTO);
 
-   log.info("Валидация номера телефона");
-   phoneValidation.validate(phone, bindingResult);
+    log.info("Валидация номера телефона");
+    phoneValidation.validate(phone, bindingResult);
 
-   if (bindingResult.hasErrors())
-      throw new PhoneNotUpdatedException(ErrorUtil.getResponse(bindingResult));
+    if (bindingResult.hasErrors())
+        throw new PhoneNotUpdatedException(ErrorUtil.getResponse(bindingResult));
 
-   phone.setUser(user);
+    phone.setUser(user);
 
-   log.info("Обновление телефона id={} с номера=\"{}\" на номер=\"{}\"", id, user.getPhones().get(0).getNumber(), phone.getNumber());
-   phoneService.update(id, phone);
+    log.info("Обновление телефона id={} с номера=\"{}\" на номер=\"{}\"", id, user.getPhones().get(0).getNumber(), phone.getNumber());
+    phoneService.update(id, phone);
 
-   log.info("Номер телефона успешно обновлен для пользователя={}", user.getUsername());
-   return ResponseEntity.status(HttpStatus.OK).body("Номер телефона успешно обновлен");
+    log.info("Номер телефона успешно обновлен для пользователя={}", user.getUsername());
+    return ResponseEntity.status(HttpStatus.OK).body("Номер телефона успешно обновлен");
 }
 ```
 
@@ -318,16 +319,16 @@ URL: http://localhost:8080/bank/phones/{id}
 
 @DeleteMapping("/{id}")
 public ResponseEntity<String> delete(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails) {
-   User user = userDetails.user();
-   log.info("Метод delete начал выполнение для пользователя={}", user.getUsername());
+    User user = userDetails.user();
+    log.info("Метод delete начал выполнение для пользователя={}", user.getUsername());
 
-   if (isRestricted(id, user)) throw new ForbiddenException();
+    if (isRestricted(id, user)) throw new ForbiddenException();
 
-   log.info("Удаляется номер телефона id={}", id);
-   phoneService.delete(id);
+    log.info("Удаляется номер телефона id={}", id);
+    phoneService.delete(id);
 
-   log.info("Номер телефона успешно удален для пользователя={}", user.getUsername());
-   return ResponseEntity.status(HttpStatus.OK).body("Номер телефона успешно удален");
+    log.info("Номер телефона успешно удален для пользователя={}", user.getUsername());
+    return ResponseEntity.status(HttpStatus.OK).body("Номер телефона успешно удален");
 }
 ```
 
@@ -373,21 +374,22 @@ DELETE-запрос на URL: http://localhost:8080/bank/phones/{id}
 ### Метод поиска пользователей по БД
 
 ```java
+
 @PostMapping("/search")
 public UserResponse searchResults(@RequestBody @Valid SearchDTO request, BindingResult bindingResult, @AuthenticationPrincipal BankUserDetails userDetails) {
-   if (bindingResult.hasErrors())
-      throw new InvalidSearchRequestException(ErrorUtil.getResponse(bindingResult));
+    if (bindingResult.hasErrors())
+        throw new InvalidSearchRequestException(ErrorUtil.getResponse(bindingResult));
 
-   log.info("Метод searchResults начал выполнение для пользователя={}", userDetails.user().getUsername());
-   User user = userMapper.toUser(request);
-   log.info("Выполняется поиск пользователей с параметрами: birthDate={}, phones.number={}, fullName={}, emails.address={}", request.getBirthDate(), request.getPhone(), request.getFullName(), request.getEmail());
-   UserResponse response = new UserResponse(userService.search(new UserSpecification(user), getPageable(request.getSort(), request.getPagination(), "fullName", 1, 10, Sort.Direction.ASC)).stream()
-           .map(userMapper::toDTO)
-           .collect(Collectors.toList()));
+    log.info("Метод searchResults начал выполнение для пользователя={}", userDetails.user().getUsername());
+    User user = userMapper.toUser(request);
+    log.info("Выполняется поиск пользователей с параметрами: birthDate={}, phones.number={}, fullName={}, emails.address={}", request.getBirthDate(), request.getPhone(), request.getFullName(), request.getEmail());
+    UserResponse response = new UserResponse(userService.search(new UserSpecification(user), getPageable(request.getSort(), request.getPagination(), "fullName", 1, 10, Sort.Direction.ASC)).stream()
+            .map(userMapper::toDTO)
+            .collect(Collectors.toList()));
 
-   log.info("Поиск пользователей успешно завершен");
-   log.info("Количество найденных пользователей: {}", response.getUsers().size());
-   return response;
+    log.info("Поиск пользователей успешно завершен");
+    log.info("Количество найденных пользователей: {}", response.getUsers().size());
+    return response;
 }
 ```
 
@@ -473,28 +475,28 @@ URL: http://localhost:8080/bank/users/search
 {
    "errors": [
       {
-         "message": "sort.field - должно соответствовать одному из перечисленных значений: fullName, birthDate, account.createdAt, phones.number, phones.createdAt, emails.address, emails.createdAt",
-         "time": "2024-03-08T09:22:46.4400124"
-      },
-      {
-         "message": "sort.direction - пожалуйста, введите корректное значение: asc (по возрастанию), desc (по убыванию)",
-         "time": "2024-03-08T09:22:46.4410126"
-      },
-      {
-         "message": "pagination.pageNumber - должно быть не меньше 1",
-         "time": "2024-03-08T09:22:46.4410126"
-      },
-      {
-         "message": "email.address - пожалуйста, введите корректный адрес электронной почты",
-         "time": "2024-03-08T09:22:46.4410126"
+         "message": "sort.field - должно соответствовать одному из перечисленных значений: id, fullName, birthDate, phones.number, emails.address",
+         "time": "2024-03-09T12:44:46.5341769"
       },
       {
          "message": "pagination.pageSize - должно быть не меньше 1",
-         "time": "2024-03-08T09:22:46.4410126"
+         "time": "2024-03-09T12:44:46.5341769"
       },
       {
-         "message": "phone.number - поле не может быть пустым",
-         "time": "2024-03-08T09:22:46.4410126"
+         "message": "email.address - пожалуйста, введите корректный адрес электронной почты",
+         "time": "2024-03-09T12:44:46.5341769"
+      },
+      {
+         "message": "pagination.pageNumber - должно быть не меньше 1",
+         "time": "2024-03-09T12:44:46.5341769"
+      },
+      {
+         "message": "sort.direction - пожалуйста, введите корректное значение: asc (по возрастанию), desc (по убыванию)",
+         "time": "2024-03-09T12:44:46.5341769"
+      },
+      {
+         "message": "phone.number - неверный номер телефона. Введите номер в корректном формате. Например: 79001234567",
+         "time": "2024-03-09T12:44:46.5341769"
       }
    ]
 }
@@ -527,17 +529,17 @@ public class BankApplication {
 @Component
 @Profile("!integration-test")
 public class ScheduledTask {
-   private final AccountService accountService;
+    private final AccountService accountService;
 
-   @Autowired
-   public ScheduledTask(AccountService accountService) {
-      this.accountService = accountService;
-   }
+    @Autowired
+    public ScheduledTask(AccountService accountService) {
+        this.accountService = accountService;
+    }
 
-   @Scheduled(fixedRate = 60_000) // указываем время запланированного запуска (соответствует 1 минуте)
-   public void increaseBalance() {
-      accountService.increaseBalanceForAllAccounts();
-   }
+    @Scheduled(fixedRate = 60_000) // указываем время запланированного запуска (соответствует 1 минуте)
+    public void increaseBalance() {
+        accountService.increaseBalanceForAllAccounts();
+    }
 }
 ```
 
@@ -547,12 +549,12 @@ public class ScheduledTask {
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
-   // позволяет делать SELECT ... FOR UPDATE
-   @Lock(LockModeType.PESSIMISTIC_WRITE)
-   @NonNull
-   List<Account> findAll();
+    // позволяет делать SELECT ... FOR UPDATE
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @NonNull
+    List<Account> findAll();
 
-   // code...
+    // code...
 }
 ```
 
@@ -568,21 +570,21 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 @PatchMapping("/{id}/transfer")
 public ResponseEntity<String> transfer(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails,
                                        @RequestBody @Valid TransferDTO request, BindingResult bindingResult) {
-   User user = userDetails.user();
-   log.info("Метод transfer начал выполнение для пользователя={}", user.getUsername());
+    User user = userDetails.user();
+    log.info("Метод transfer начал выполнение для пользователя={}", user.getUsername());
 
-   // если ID аккаунта аутентифицированного пользователя не соответствует ID в URL, то выбрасывается исключение
-   if (user.getAccount().getId() != id)
-      throw new ForbiddenException();
-   // если есть ошибки при валидации, то будет брошено исключение
-   if (bindingResult.hasErrors())
-      throw new TransferNotProcessedException(ErrorUtil.getResponse(bindingResult));
+    // если ID аккаунта аутентифицированного пользователя не соответствует ID в URL, то выбрасывается исключение
+    if (user.getAccount().getId() != id)
+        throw new ForbiddenException();
+    // если есть ошибки при валидации, то будет брошено исключение
+    if (bindingResult.hasErrors())
+        throw new TransferNotProcessedException(ErrorUtil.getResponse(bindingResult));
 
-   log.info("Попытка перевода с аккаунта id={} на аккаунт id={}, сумма перевода={}", id, request.getAccountId(), request.getAmount());
-   accountService.transfer(id, request.getAccountId(), request.getAmount());
+    log.info("Попытка перевода с аккаунта id={} на аккаунт id={}, сумма перевода={}", id, request.getAccountId(), request.getAmount());
+    accountService.transfer(id, request.getAccountId(), request.getAmount());
 
-   log.info("Перевод от пользователя={} на сумму={} выполнен успешно", user.getUsername(), request.getAmount());
-   return ResponseEntity.status(HttpStatus.OK).body("Перевод выполнен успешно");
+    log.info("Перевод от пользователя={} на сумму={} выполнен успешно", user.getUsername(), request.getAmount());
+    return ResponseEntity.status(HttpStatus.OK).body("Перевод выполнен успешно");
 }
 ```
 
@@ -598,20 +600,20 @@ public ResponseEntity<String> transfer(@PathVariable("id") long id, @Authenticat
 // синхронизируем метод (делаем его потокобезопасным) с помощью synchronized
 @Transactional
 public synchronized void transfer(long fromId, long toId, double amount) {
-   // SELECT банковских счетов по переданным ID
-   Account accountFrom = accountRepository.findById(fromId).orElse(null);
-   Account accountTo = accountRepository.findById(toId).orElse(null);
-   // если в базе данных нет банковских аккаунтов по заданным ID, то выбрасываем исключение
-   if (accountTo == null || accountFrom == null)
-      throw new AccountNotFoundException();
-   // если в аккаунте, из которого исходит перевод недостаточно средств, то выбрасывается исключение
-   if (amount > accountFrom.getAmount())
-      throw new NotEnoughFundsException();
-   // удаляем сумму из исходящего счета и добавляем в принимающий счет
-   accountFrom.setAmount(accountFrom.getAmount() - amount);
-   accountTo.setAmount(accountTo.getAmount() + amount);
+    // SELECT банковских счетов по переданным ID
+    Account accountFrom = accountRepository.findById(fromId).orElse(null);
+    Account accountTo = accountRepository.findById(toId).orElse(null);
+    // если в базе данных нет банковских аккаунтов по заданным ID, то выбрасываем исключение
+    if (accountTo == null || accountFrom == null)
+        throw new AccountNotFoundException();
+    // если в аккаунте, из которого исходит перевод недостаточно средств, то выбрасывается исключение
+    if (amount > accountFrom.getAmount())
+        throw new NotEnoughFundsException();
+    // удаляем сумму из исходящего счета и добавляем в принимающий счет
+    accountFrom.setAmount(accountFrom.getAmount() - amount);
+    accountTo.setAmount(accountTo.getAmount() + amount);
 
-   accountRepository.saveAll(List.of(accountFrom, accountTo));
+    accountRepository.saveAll(List.of(accountFrom, accountTo));
 }
 ```
 
@@ -623,11 +625,11 @@ public synchronized void transfer(long fromId, long toId, double amount) {
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
-   // code ...
+    // code ...
 
-   // SELECT ... FOR UPDATE
-   @Lock(LockModeType.PESSIMISTIC_WRITE)
-   Optional<Account> findById(long id);
+    // SELECT ... FOR UPDATE
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<Account> findById(long id);
 }
 ```
 

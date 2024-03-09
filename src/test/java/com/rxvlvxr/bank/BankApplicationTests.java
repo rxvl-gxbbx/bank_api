@@ -1,5 +1,6 @@
 package com.rxvlvxr.bank;
 
+import com.rxvlvxr.bank.exceptions.AccountNotFoundException;
 import com.rxvlvxr.bank.models.Account;
 import com.rxvlvxr.bank.models.Email;
 import com.rxvlvxr.bank.models.Phone;
@@ -15,7 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 @SpringBootTest
@@ -28,6 +32,7 @@ class BankApplicationTests {
     private final UserRepository userRepository;
     private final AccountService accountService;
     private final double amount = 123.123;
+    private final int capacity = 5;
     private List<Account> accounts;
     private List<User> users;
 
@@ -41,30 +46,28 @@ class BankApplicationTests {
     @BeforeAll
     @Transactional
     public void setUp() {
-        User user1 = new User("First Test User", LocalDate.now().minusYears(18), "firstUsername", "firstPassword");
-        User user2 = new User("Second Test User", LocalDate.now().minusYears(18), "secondUsername", "secondPassword");
+        users = new ArrayList<>();
 
-        Account account1 = new Account(100_000, LocalDateTime.now(), user1, 100_000);
-        Account account2 = new Account(100_000, LocalDateTime.now(), user2, 100_000);
+        for (int i = 0; i < capacity; i++) {
+            User user = new User("Full Name Test" + i, LocalDate.now().minusYears(18 + i), "username" + i, "password" + i);
 
-        Phone phone1 = new Phone("8999123123456", LocalDateTime.now(), user1);
-        Phone phone2 = new Phone("8777321654321", LocalDateTime.now(), user2);
+            Account account = new Account(100_000_000, LocalDateTime.now(), user, 100_000_000);
+            Phone phone = new Phone("8900123121" + i, LocalDateTime.now(), user);
+            Email email = new Email("mail" + i + "@mail.ru", LocalDateTime.now(), user);
 
-        Email email1 = new Email("Test Address №1", LocalDateTime.now(), user1);
-        Email email2 = new Email("Test Address №2", LocalDateTime.now(), user2);
+            user.setAccount(account);
+            user.setPhones(Collections.singletonList(phone));
+            user.setEmails(Collections.singletonList(email));
 
-        user1.setPhones(Collections.singletonList(phone1));
-        user1.setEmails(Collections.singletonList(email1));
+            users.add(user);
+        }
 
-        user2.setPhones(Collections.singletonList(phone2));
-        user2.setEmails(Collections.singletonList(email2));
+        userRepository.saveAll(users);
 
-        user1.setAccount(account1);
-        user2.setAccount(account2);
-
-        users = userRepository.saveAll(List.of(user1, user2));
-
-        accounts = users.stream().map(User::getAccount).sorted(Comparator.comparingLong(Account::getId)).toList();
+        accounts = users.stream()
+                .map(User::getAccount)
+                .sorted(Comparator.comparingLong(Account::getId))
+                .toList();
     }
 
     @AfterAll
@@ -75,12 +78,16 @@ class BankApplicationTests {
 
     @Test
     @Transactional
-    void transferCorrectAmount() {
-        Assertions.assertTrue(accounts.size() >= 2);
+    void isSizeCorrect() {
+        Assertions.assertEquals(capacity, accounts.size());
+    }
 
+    @Test
+    @Transactional
+    void transferCorrectAmount() {
         accountService.transfer(accounts.get(0).getId(), accounts.get(1).getId(), amount);
 
-        List<Account> accountsFromTable = getAccounts(accounts.get(0).getId(), accounts.get(1).getId());
+        List<Account> accountsFromTable = getAccounts();
 
         Assertions.assertEquals(accounts.get(0).getAmount() - amount, accountsFromTable.get(0).getAmount());
         Assertions.assertEquals(accounts.get(1).getAmount() + amount, accountsFromTable.get(1).getAmount());
@@ -89,14 +96,14 @@ class BankApplicationTests {
     @Test
     @Transactional
     void transferFromOneToOther26TimesGetCorrectAmount() {
-        Assertions.assertTrue(accounts.size() >= 2);
+        final int transferCount = 26;
 
-        for (int i = 0; i < 26; i++) {
+        for (int i = 0; i < transferCount; i++) {
             accountService.transfer(accounts.get(0).getId(), accounts.get(1).getId(), amount);
             accountService.transfer(accounts.get(1).getId(), accounts.get(0).getId(), amount);
         }
 
-        List<Account> accountsFromTable = getAccounts(accounts.get(0).getId(), accounts.get(1).getId());
+        List<Account> accountsFromTable = getAccounts();
 
         Assertions.assertEquals(accounts.get(0).getAmount(), accountsFromTable.get(0).getAmount());
         Assertions.assertEquals(accounts.get(1).getAmount(), accountsFromTable.get(1).getAmount());
@@ -105,13 +112,13 @@ class BankApplicationTests {
     @Test
     @Transactional
     void transferFromOneToOtherAccountIn10ParallelThreadsFor50TimesEachAndGetCurrentAmount() throws InterruptedException {
-        Assertions.assertTrue(accounts.size() >= 2);
-
+        final int transferCounts = 50;
+        final int threadsCount = 10;
         CountDownLatch countDownLatch = new CountDownLatch(10);
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < threadsCount; i++) {
             new Thread(() -> {
-                for (int j = 0; j < 50; j++) {
+                for (int j = 0; j < transferCounts; j++) {
                     accountService.transfer(accounts.get(0).getId(), accounts.get(1).getId(), amount);
                     accountService.transfer(accounts.get(1).getId(), accounts.get(0).getId(), amount);
                 }
@@ -122,22 +129,69 @@ class BankApplicationTests {
 
         countDownLatch.await();
 
-        List<Account> accountsFromTable = getAccounts(accounts.get(0).getId(), accounts.get(1).getId());
+        List<Account> accountsFromTable = getAccounts();
 
         Assertions.assertEquals(accounts.get(0).getAmount(), accountsFromTable.get(0).getAmount());
         Assertions.assertEquals(accounts.get(1).getAmount(), accountsFromTable.get(1).getAmount());
     }
 
-    private List<Account> getAccounts(long fromId, long toId) {
-        List<Account> accs = new LinkedList<>();
+    @Test
+    @Transactional
+    void transferToAccountFromThreeDifferentAccounts25TimesEachAndGetCurrentAmount() throws InterruptedException {
+        final int maxIndex = accounts.size() - 1;
+        final int count = 25;
+        CountDownLatch countDownLatch = new CountDownLatch(maxIndex);
 
-        Optional<Account> optional1 = accountRepository.findById(fromId);
-        Optional<Account> optional2 = accountRepository.findById(toId);
+        for (int i = 0; i < maxIndex; i++) {
+            int from = i;
+            new Thread(() -> {
+                for (int j = 0; j < count; j++) {
+                    accountService.transfer(accounts.get(from).getId(), accounts.get(maxIndex).getId(), amount);
+                }
 
-        if (optional1.isPresent() && optional2.isPresent()) {
-            accs = List.of(optional1.get(), optional2.get());
+                countDownLatch.countDown();
+            }).start();
         }
 
-        return accs;
+        countDownLatch.await();
+
+        Account account = accountRepository.findById(accounts.get(maxIndex).getId()).orElseThrow(AccountNotFoundException::new);
+
+        Assertions.assertEquals(accounts.get(maxIndex).getAmount() + count * amount * maxIndex, account.getAmount(), 0.001);
+    }
+
+    @Test
+    @Transactional
+    void transfer50TimesInCycleFrom10ParallelThreadsAndGetCorrectAmountInEachAccount() throws InterruptedException {
+        final int transferCounts = 50;
+        final int threadsCount = 10;
+        CountDownLatch countDownLatch = new CountDownLatch(10);
+
+        for (int x = 0; x < threadsCount; x++) {
+            new Thread(() -> {
+                for (int y = 0; y < transferCounts; y++) {
+                    for (int i = 0; i < capacity; i++) {
+                        for (int j = capacity - 1; j >= 0; j--) {
+                            accountService.transfer(accounts.get(i).getId(), accounts.get(j).getId(), amount);
+                        }
+                    }
+                }
+                countDownLatch.countDown();
+            }).start();
+        }
+
+        countDownLatch.await();
+
+        List<Account> accountsFromTable = getAccounts();
+
+        for (int i = 0; i < capacity; i++) {
+            Assertions.assertEquals(accounts.get(i).getAmount(), accountsFromTable.get(i).getAmount());
+        }
+    }
+
+    private List<Account> getAccounts() {
+        return accountRepository.findAll().stream()
+                .sorted(Comparator.comparingLong(Account::getId))
+                .toList();
     }
 }

@@ -17,13 +17,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private final JWTFilter jwtFilter;
     private static final String[] PUBLIC_PATHS = {
             "/v3/api-docs.yaml",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html"
     };
+    private final JWTFilter jwtFilter;
 
     @Autowired
     public SecurityConfig(JWTFilter jwtFilter) {

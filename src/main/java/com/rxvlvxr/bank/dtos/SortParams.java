@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SortParams {
-    @Pattern(regexp = "id|fullName|birthDate|account.createdAt|phones.number|emails.address", message = "должно соответствовать одному из перечисленных значений: fullName, birthDate, account.createdAt, phones.number, phones.createdAt, emails.address, emails.createdAt")
+    @Pattern(regexp = "id|fullName|birthDate|phones\\.number|emails\\.address", message = "должно соответствовать одному из перечисленных значений: id, fullName, birthDate, phones.number, emails.address")
     private String field;
     @Pattern(regexp = "asc|desc", message = "пожалуйста, введите корректное значение: asc (по возрастанию), desc (по убыванию)")
     private String direction;
