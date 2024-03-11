@@ -131,19 +131,19 @@ URL: http://localhost:8080/bank/users/registration
 
 ```json
 {
-   "fullName": "Фамилия Имя Отчество",
-   "birthDate": "2000-01-01",
-   "username": "user",
-   "password": "password",
-   "account": {
-      "amount": 1000
-   },
-   "phone": {
-      "number": "79991234567"
-   },
-   "email": {
-      "address": "mail@mail.com"
-   }
+  "fullName": "Фамилия Имя Отчество",
+  "birthDate": "2000-01-01",
+  "username": "user",
+  "password": "password",
+  "account": {
+    "amount": 1000
+  },
+  "phone": {
+    "number": "79991234567"
+  },
+  "email": {
+    "address": "mail@mail.com"
+  }
 }
 ```
 
@@ -153,7 +153,7 @@ URL: http://localhost:8080/bank/users/registration
 
 ```json
 {
-   "jwt-token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJVc2VyIERldGFpbHMiLCJ1c2VybmFtZSI6InVzZXIiLCJpYXQiOjE3MDk1NDU4NzEsImlzcyI6ImJhbmstYXBpLXRlc3QiLCJleHAiOjE3MDk1NDk0NzF9.DY_Bq7JeKd3CToRMQ5-j8FK4Q74a4emuDoVsVWCNgJ4"
+  "jwt-token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJVc2VyIERldGFpbHMiLCJ1c2VybmFtZSI6InVzZXIiLCJpYXQiOjE3MDk1NDU4NzEsImlzcyI6ImJhbmstYXBpLXRlc3QiLCJleHAiOjE3MDk1NDk0NzF9.DY_Bq7JeKd3CToRMQ5-j8FK4Q74a4emuDoVsVWCNgJ4"
 }
 ```
 
@@ -161,20 +161,20 @@ URL: http://localhost:8080/bank/users/registration
 
 ```json
 {
-   "errors": [
-      {
-         "message": "fullName - неверный формат. Введите ФИО. Например: Фамилия Имя Отчество",
-         "time": "2024-03-04T14:22:06.1859661"
-      },
-      {
-         "message": "email.address - пожалуйста, введите корректный адрес электронной почты",
-         "time": "2024-03-04T14:22:06.1859661"
-      },
-      {
-         "message": "fullName - поле не может быть пустым",
-         "time": "2024-03-04T14:22:06.1859661"
-      }
-   ]
+  "errors": [
+    {
+      "message": "fullName - неверный формат. Введите ФИО. Например: Фамилия Имя Отчество",
+      "time": "2024-03-04T14:22:06.1859661"
+    },
+    {
+      "message": "email.address - пожалуйста, введите корректный адрес электронной почты",
+      "time": "2024-03-04T14:22:06.1859661"
+    },
+    {
+      "message": "fullName - поле не может быть пустым",
+      "time": "2024-03-04T14:22:06.1859661"
+    }
+  ]
 }
 ```
 
@@ -187,7 +187,7 @@ URL: http://localhost:8080/bank/users/registration
 ```java
 
 @PostMapping
-public ResponseEntity<String> add(@AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid PhoneDTO phoneDTO, BindingResult bindingResult) {
+public ResponseEntity<Response> add(@AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid PhoneDTO phoneDTO, BindingResult bindingResult) {
     User user = userDetails.user();
     log.info("Метод add начал выполнение для пользователя={}", user.getUsername());
 
@@ -204,7 +204,7 @@ public ResponseEntity<String> add(@AuthenticationPrincipal BankUserDetails userD
     phoneService.add(phone);
 
     log.info("Номер телефона успешно добавлен для пользователя={}", user.getUsername());
-    return ResponseEntity.status(HttpStatus.CREATED).body("Номер телефона успешно добавлен");
+    return new ResponseEntity<>(new Response("Номер телефона успешно добавлен", LocalDateTime.now()), HttpStatus.CREATED);
 }
 ```
 
@@ -216,7 +216,7 @@ public ResponseEntity<String> add(@AuthenticationPrincipal BankUserDetails userD
 
 ```json
 {
-   "number": "79990123456"
+  "number": "79990123456"
 }
 ```
 
@@ -224,8 +224,8 @@ public ResponseEntity<String> add(@AuthenticationPrincipal BankUserDetails userD
 
 ```json
 {
-   "message": "Номер телефона успешно добавлен",
-   "time": "2024-03-04T17:02:21.2733664"
+  "message": "Номер телефона успешно добавлен",
+  "time": "2024-03-04T17:02:21.2733664"
 }
 ```
 
@@ -233,12 +233,12 @@ public ResponseEntity<String> add(@AuthenticationPrincipal BankUserDetails userD
 
 ```json
 {
-   "errors": [
-      {
-         "message": "number - Этот номер уже используется",
-         "time": "2024-03-04T14:38:12.3013799"
-      }
-   ]
+  "errors": [
+    {
+      "message": "number - Этот номер уже используется",
+      "time": "2024-03-04T14:38:12.3013799"
+    }
+  ]
 }
 ```
 
@@ -249,7 +249,7 @@ public ResponseEntity<String> add(@AuthenticationPrincipal BankUserDetails userD
 ```java
 
 @PatchMapping("/{id}")
-public ResponseEntity<String> update(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid PhoneDTO phoneDTO, BindingResult bindingResult) {
+public ResponseEntity<Response> update(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails, @RequestBody @Valid PhoneDTO phoneDTO, BindingResult bindingResult) {
     User user = userDetails.user();
     log.info("Метод update начал выполнение для пользователя={}", user.getUsername());
 
@@ -265,11 +265,14 @@ public ResponseEntity<String> update(@PathVariable("id") long id, @Authenticatio
 
     phone.setUser(user);
 
-    log.info("Обновление телефона id={} с номера=\"{}\" на номер=\"{}\"", id, user.getPhones().get(0).getNumber(), phone.getNumber());
+    user.getPhones().stream()
+            .findFirst()
+            .ifPresentOrElse(telephone -> log.info("Обновление телефона id={} с номера=\"{}\" на номер=\"{}\"", id, telephone.getNumber(), phone.getNumber()),
+                    PhoneNotFoundException::new);
     phoneService.update(id, phone);
 
     log.info("Номер телефона успешно обновлен для пользователя={}", user.getUsername());
-    return ResponseEntity.status(HttpStatus.OK).body("Номер телефона успешно обновлен");
+    return new ResponseEntity<>(new Response("Номер телефона успешно обновлен", LocalDateTime.now()), HttpStatus.OK);
 }
 ```
 
@@ -283,7 +286,7 @@ URL: http://localhost:8080/bank/phones/{id}
 
 ```json
 {
-   "number": "79994561212"
+  "number": "79994561212"
 }
 ```
 
@@ -291,8 +294,8 @@ URL: http://localhost:8080/bank/phones/{id}
 
 ```json
 {
-   "message": "Номер телефона успешно обновлен",
-   "time": "2024-03-04T17:03:16.6445454"
+  "message": "Номер телефона успешно обновлен",
+  "time": "2024-03-04T17:03:16.6445454"
 }
 ```
 
@@ -300,12 +303,12 @@ URL: http://localhost:8080/bank/phones/{id}
 
 ```json
 {
-   "errors": [
-      {
-         "message": "number - Этот номер уже используется",
-         "time": "2024-03-04T14:21:42.7710392"
-      }
-   ]
+  "errors": [
+    {
+      "message": "number - Этот номер уже используется",
+      "time": "2024-03-04T14:21:42.7710392"
+    }
+  ]
 }
 ```
 
@@ -318,17 +321,20 @@ URL: http://localhost:8080/bank/phones/{id}
 ```java
 
 @DeleteMapping("/{id}")
-public ResponseEntity<String> delete(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails) {
+public ResponseEntity<Response> delete(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails) {
     User user = userDetails.user();
     log.info("Метод delete начал выполнение для пользователя={}", user.getUsername());
 
     if (isRestricted(id, user)) throw new ForbiddenException();
 
-    log.info("Удаляется номер телефона id={}", id);
+    user.getPhones().stream()
+            .findFirst()
+            .ifPresentOrElse(phone -> log.info("Удаляется телефон id={} с номером {} для пользователя {}", id, phone.getNumber(), user.getUsername()),
+                    PhoneNotFoundException::new);
     phoneService.delete(id);
 
     log.info("Номер телефона успешно удален для пользователя={}", user.getUsername());
-    return ResponseEntity.status(HttpStatus.OK).body("Номер телефона успешно удален");
+    return new ResponseEntity<>(new Response("Номер телефона успешно удален", LocalDateTime.now()), HttpStatus.OK);
 }
 ```
 
@@ -344,8 +350,8 @@ DELETE-запрос на URL: http://localhost:8080/bank/phones/{id}
 
 ```json
 {
-   "message": "Номер телефона успешно удален",
-   "time": "2024-03-04T17:03:38.9727026"
+  "message": "Номер телефона успешно удален",
+  "time": "2024-03-04T17:03:38.9727026"
 }
 ```
 
@@ -353,12 +359,12 @@ DELETE-запрос на URL: http://localhost:8080/bank/phones/{id}
 
 ```json
 {
-   "errors": [
-      {
-         "message": "Невозможно выполнить операцию",
-         "time": "2024-03-04T14:32:19.7332502"
-      }
-   ]
+  "errors": [
+    {
+      "message": "Невозможно выполнить операцию",
+      "time": "2024-03-04T14:32:19.7332502"
+    }
+  ]
 }
 ```
 
@@ -407,22 +413,22 @@ URL: http://localhost:8080/bank/users/search
 
 ```json
 {
-   "birthDate": "1980-01-01",
-   "phone": {
-      "number": "79259991212"
-   },
-   "fullName": "Фам",
-   "email": {
-      "address": "another@mail.ru"
-   },
-   "pagination": {
-      "pageNumber": 1,
-      "pageSize": 1
-   },
-   "sort": {
-      "field": "fullName",
-      "direction": "asc"
-   }
+  "birthDate": "1980-01-01",
+  "phone": {
+    "number": "79259991212"
+  },
+  "fullName": "Фам",
+  "email": {
+    "address": "another@mail.ru"
+  },
+  "pagination": {
+    "pageNumber": 1,
+    "pageSize": 1
+  },
+  "sort": {
+    "field": "fullName",
+    "direction": "asc"
+  }
 }
 ```
 
@@ -430,34 +436,34 @@ URL: http://localhost:8080/bank/users/search
 
 ```json
 {
-   "users": [
-      {
-         "fullName": "Фамилия Имя Отчество",
-         "birthDate": "1988-03-30",
-         "account": {
-            "amount": 2474914.4992992477
-         },
-         "phones": [
-            {
-               "number": "79259991212"
-            },
-            {
-               "number": "79309309090"
-            },
-            {
-               "number": "79261239999"
-            }
-         ],
-         "emails": [
-            {
-               "address": "example@gmail.com"
-            },
-            {
-               "address": "another@mail.ru"
-            }
-         ]
-      }
-   ]
+  "users": [
+    {
+      "fullName": "Фамилия Имя Отчество",
+      "birthDate": "1988-03-30",
+      "account": {
+        "amount": 2474914.4992992477
+      },
+      "phones": [
+        {
+          "number": "79259991212"
+        },
+        {
+          "number": "79309309090"
+        },
+        {
+          "number": "79261239999"
+        }
+      ],
+      "emails": [
+        {
+          "address": "example@gmail.com"
+        },
+        {
+          "address": "another@mail.ru"
+        }
+      ]
+    }
+  ]
 }
 ```
 
@@ -465,7 +471,7 @@ URL: http://localhost:8080/bank/users/search
 
 ```json
 {
-   "users": []
+  "users": []
 }
 ```
 
@@ -473,32 +479,32 @@ URL: http://localhost:8080/bank/users/search
 
 ```json
 {
-   "errors": [
-      {
-         "message": "sort.field - должно соответствовать одному из перечисленных значений: id, fullName, birthDate, phones.number, emails.address",
-         "time": "2024-03-09T12:44:46.5341769"
-      },
-      {
-         "message": "pagination.pageSize - должно быть не меньше 1",
-         "time": "2024-03-09T12:44:46.5341769"
-      },
-      {
-         "message": "email.address - пожалуйста, введите корректный адрес электронной почты",
-         "time": "2024-03-09T12:44:46.5341769"
-      },
-      {
-         "message": "pagination.pageNumber - должно быть не меньше 1",
-         "time": "2024-03-09T12:44:46.5341769"
-      },
-      {
-         "message": "sort.direction - пожалуйста, введите корректное значение: asc (по возрастанию), desc (по убыванию)",
-         "time": "2024-03-09T12:44:46.5341769"
-      },
-      {
-         "message": "phone.number - неверный номер телефона. Введите номер в корректном формате. Например: 79001234567",
-         "time": "2024-03-09T12:44:46.5341769"
-      }
-   ]
+  "errors": [
+    {
+      "message": "sort.field - должно соответствовать одному из перечисленных значений: id, fullName, birthDate, phones.number, emails.address",
+      "time": "2024-03-09T12:44:46.5341769"
+    },
+    {
+      "message": "pagination.pageSize - должно быть не меньше 1",
+      "time": "2024-03-09T12:44:46.5341769"
+    },
+    {
+      "message": "email.address - пожалуйста, введите корректный адрес электронной почты",
+      "time": "2024-03-09T12:44:46.5341769"
+    },
+    {
+      "message": "pagination.pageNumber - должно быть не меньше 1",
+      "time": "2024-03-09T12:44:46.5341769"
+    },
+    {
+      "message": "sort.direction - пожалуйста, введите корректное значение: asc (по возрастанию), desc (по убыванию)",
+      "time": "2024-03-09T12:44:46.5341769"
+    },
+    {
+      "message": "phone.number - неверный номер телефона. Введите номер в корректном формате. Например: 79001234567",
+      "time": "2024-03-09T12:44:46.5341769"
+    }
+  ]
 }
 ```
 
@@ -515,7 +521,7 @@ URL: http://localhost:8080/bank/users/search
 @SpringBootApplication
 @EnableScheduling // эта аннотация позволяет включить запланированные задачи
 public class BankApplication {
-   // code
+    // code
 }
 ```
 
@@ -568,23 +574,24 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 ```java
 
 @PatchMapping("/{id}/transfer")
-public ResponseEntity<String> transfer(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails,
-                                       @RequestBody @Valid TransferDTO request, BindingResult bindingResult) {
+public ResponseEntity<Response> transfer(@PathVariable("id") long id, @AuthenticationPrincipal BankUserDetails userDetails,
+                                         @RequestBody @Valid TransferDTO request, BindingResult bindingResult) {
     User user = userDetails.user();
     log.info("Метод transfer начал выполнение для пользователя={}", user.getUsername());
 
+    long accountId = user.getAccount().getId();
     // если ID аккаунта аутентифицированного пользователя не соответствует ID в URL, то выбрасывается исключение
-    if (user.getAccount().getId() != id)
-        throw new ForbiddenException();
+    if (accountId != id) throw new ForbiddenException();
+    // нельзя переводить на свой счет
+    if (accountId == request.getAccountId()) throw new NotAllowedException();
     // если есть ошибки при валидации, то будет брошено исключение
-    if (bindingResult.hasErrors())
-        throw new TransferNotProcessedException(ErrorUtil.getResponse(bindingResult));
+    if (bindingResult.hasErrors()) throw new TransferNotProcessedException(ErrorUtil.getResponse(bindingResult));
 
     log.info("Попытка перевода с аккаунта id={} на аккаунт id={}, сумма перевода={}", id, request.getAccountId(), request.getAmount());
     accountService.transfer(id, request.getAccountId(), request.getAmount());
 
     log.info("Перевод от пользователя={} на сумму={} выполнен успешно", user.getUsername(), request.getAmount());
-    return ResponseEntity.status(HttpStatus.OK).body("Перевод выполнен успешно");
+    return new ResponseEntity<>(new Response("Перевод выполнен успешно", LocalDateTime.now()), HttpStatus.OK);
 }
 ```
 
@@ -600,20 +607,17 @@ public ResponseEntity<String> transfer(@PathVariable("id") long id, @Authenticat
 // синхронизируем метод (делаем его потокобезопасным) с помощью synchronized
 @Transactional
 public synchronized void transfer(long fromId, long toId, double amount) {
-    // SELECT банковских счетов по переданным ID
-    Account accountFrom = accountRepository.findById(fromId).orElse(null);
-    Account accountTo = accountRepository.findById(toId).orElse(null);
     // если в базе данных нет банковских аккаунтов по заданным ID, то выбрасываем исключение
-    if (accountTo == null || accountFrom == null)
-        throw new AccountNotFoundException();
+    Account accountFrom = accountRepository.findById(fromId).orElseThrow(AccountNotFoundException::new);
+    Account accountTo = accountRepository.findById(toId).orElseThrow(AccountNotFoundException::new);
     // если в аккаунте, из которого исходит перевод недостаточно средств, то выбрасывается исключение
     if (amount > accountFrom.getAmount())
-        throw new NotEnoughFundsException();
+        throw new NotEnoughFundsException(accountFrom.getAmount());
     // удаляем сумму из исходящего счета и добавляем в принимающий счет
     accountFrom.setAmount(accountFrom.getAmount() - amount);
     accountTo.setAmount(accountTo.getAmount() + amount);
 
-    accountRepository.saveAll(List.of(accountFrom, accountTo));
+    accountRepository.flush();
 }
 ```
 
@@ -640,8 +644,8 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
 ```json
 {
-   "accountId": 150,
-   "amount": 1000
+  "accountId": 150,
+  "amount": 1000
 }
 ```
 
@@ -649,8 +653,8 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
 ```json
 {
-   "message": "Перевод выполнен успешно",
-   "time": "2024-03-04T17:05:39.8344266"
+  "message": "Перевод выполнен успешно",
+  "time": "2024-03-04T17:05:39.8344266"
 }
 ```
 
@@ -658,11 +662,11 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
 ```json
 {
-   "errors": [
-      {
-         "message": "Недостаточно средств на счете",
-         "time": "2024-03-04T15:44:59.0216489"
-      }
-   ]
+  "errors": [
+    {
+      "message": "Недостаточно средств на счете",
+      "time": "2024-03-04T15:44:59.0216489"
+    }
+  ]
 }
 ```

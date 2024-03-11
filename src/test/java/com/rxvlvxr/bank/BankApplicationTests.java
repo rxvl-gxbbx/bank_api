@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -112,13 +113,13 @@ class BankApplicationTests {
     @Test
     @Transactional
     void transferFromOneToOtherAccountIn10ParallelThreadsFor50TimesEachAndGetCurrentAmount() throws InterruptedException {
-        final int transferCounts = 50;
-        final int threadsCount = 10;
-        CountDownLatch countDownLatch = new CountDownLatch(10);
+        final int transferCount = 50;
+        final int threadCount = 10;
+        CountDownLatch countDownLatch = new CountDownLatch(threadCount);
 
-        for (int i = 0; i < threadsCount; i++) {
+        for (int i = 0; i < threadCount; i++) {
             new Thread(() -> {
-                for (int j = 0; j < transferCounts; j++) {
+                for (int j = 0; j < transferCount; j++) {
                     accountService.transfer(accounts.get(0).getId(), accounts.get(1).getId(), amount);
                     accountService.transfer(accounts.get(1).getId(), accounts.get(0).getId(), amount);
                 }
@@ -163,13 +164,13 @@ class BankApplicationTests {
     @Test
     @Transactional
     void transfer50TimesInCycleFrom10ParallelThreadsAndGetCorrectAmountInEachAccount() throws InterruptedException {
-        final int transferCounts = 50;
-        final int threadsCount = 10;
-        CountDownLatch countDownLatch = new CountDownLatch(10);
+        final int transferCount = 50;
+        final int threadCount = 10;
+        CountDownLatch countDownLatch = new CountDownLatch(threadCount);
 
-        for (int x = 0; x < threadsCount; x++) {
+        for (int x = 0; x < threadCount; x++) {
             new Thread(() -> {
-                for (int y = 0; y < transferCounts; y++) {
+                for (int y = 0; y < transferCount; y++) {
                     for (int i = 0; i < capacity; i++) {
                         for (int j = capacity - 1; j >= 0; j--) {
                             accountService.transfer(accounts.get(i).getId(), accounts.get(j).getId(), amount);
@@ -190,8 +191,14 @@ class BankApplicationTests {
     }
 
     private List<Account> getAccounts() {
-        return accountRepository.findAll().stream()
+        List<Account> accountsFromTable = accountRepository.findAll().stream()
                 .sorted(Comparator.comparingLong(Account::getId))
                 .toList();
+
+        accountsFromTable = accountsFromTable.stream()
+                .skip(accountsFromTable.size() - accounts.size())
+                .collect(Collectors.toList());
+
+        return accountsFromTable;
     }
 }
